@@ -1,21 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainBottomUI.NetworkUI.NetworkFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+
+    <!-- Main Navigation Grid -->
+    <GridLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="NetworkFragment"
-        android:textColor="@android:color/black"
-        android:gravity="center"
-        android:textSize="22sp"
-        android:textStyle="bold"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="200dp"
 
-        />
+        android:columnCount="2"
 
-</FrameLayout>
+
+        >
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDjowdaAcademy"
+
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="5dp"
+            android:enabled="false"
+            android:text="Djowda Academy"
+            app:cornerRadius="10dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFoodCollaboration"
+
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="5dp"
+            android:text="Food Collaboration"
+            app:cornerRadius="10dp" />
+
+        <!-- Add more buttons for future actions here -->
+
+        <com.google.android.material.button.MaterialButton
+
+
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="5dp"
+            android:enabled="false"
+            android:text="developing ..."
+            app:cornerRadius="10dp" />
+
+        <com.google.android.material.button.MaterialButton
+
+
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="5dp"
+            android:enabled="false"
+            android:text="developing ..."
+            app:cornerRadius="10dp" />
+
+        <com.google.android.material.button.MaterialButton
+
+
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="5dp"
+            android:enabled="false"
+            android:text="developing ..."
+            app:cornerRadius="10dp" />
+
+        <com.google.android.material.button.MaterialButton
+
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="5dp"
+            android:enabled="false"
+            android:text="developing ..."
+            app:cornerRadius="10dp" />
+
+    </GridLayout>
+</RelativeLayout>
