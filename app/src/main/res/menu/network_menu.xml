@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Navigation to 'Ask for Food' tab -->
+    <item
+        android:id="@+id/nav_ask_food"
+        android:icon="@drawable/baseline_handshake_24"
+        android:title="Ask for Food" />
+
+    <!-- Navigation to 'Get Food Requests' tab -->
+    <item
+        android:id="@+id/nav_get_requests"
+        android:icon="@drawable/baseline_handshake_24"
+        android:title="Get Requests" />
+
+    <!-- Navigation to 'Why Ask' dialog -->
+    <item
+        android:id="@+id/nav_why_ask"
+        android:icon="@drawable/baseline_handshake_24"
+        android:title="Why Ask?" />
+
+    <!-- Navigation to 'Why Donate' dialog -->
+    <item
+        android:id="@+id/nav_why_donate"
+        android:icon="@drawable/baseline_handshake_24"
+        android:title="Why Donate?" />
+
+</menu>
