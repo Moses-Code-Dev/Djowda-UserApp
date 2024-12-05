@@ -17,23 +17,6 @@
             </InsightsFilterSettings>
           </value>
         </entry>
-        <entry key="Firebase Crashlytics">
-          <value>
-            <InsightsFilterSettings>
-              <option name="connection">
-                <ConnectionSetting>
-                  <option name="appId" value="com.djowda.djowdaUser" />
-                  <option name="mobileSdkAppId" value="1:25049466840:android:28db00773d6f0f789f94ad" />
-                  <option name="projectId" value="djowda-testing" />
-                  <option name="projectNumber" value="25049466840" />
-                </ConnectionSetting>
-              </option>
-              <option name="signal" value="SIGNAL_UNSPECIFIED" />
-              <option name="timeIntervalDays" value="THIRTY_DAYS" />
-              <option name="visibilityType" value="ALL" />
-            </InsightsFilterSettings>
-          </value>
-        </entry>
       </map>
     </option>
   </component>
