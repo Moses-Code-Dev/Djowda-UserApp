@@ -29,17 +29,17 @@ The User App in the Djowda platform is designed to serve as the primary interfac
 
 | App                  | Direct Interaction with User App? | Indirect Interaction with User App? |
 |----------------------|:---------------------------------:|:-----------------------------------:|
-| <img src="src/Store_App.png" alt="Store App" width="50" height="50"> Store App            | X                                 |                                     |
-| <img src="src/Farmer_App.png" alt="Farmer App" width="50" height="50"> Farmer App           | X                                 |                                     |
-| <img src="src/Delivery_Men_App.png" alt="Delivery Men App" width="50" height="50"> Delivery Men App     | X                                 |                                     |
-| <img src="src/Store_Admin_App.png" alt="Store Admin App" width="50" height="50"> Store Admin App      | X                                 |                                     |
-| <img src="src/Restaurants_App.png" alt="Restaurants App" width="50" height="50"> Restaurants App      | X                                 |                                     |
-| <img src="src/App_for_Seed_Providers.png" alt="App for Seed Providers" width="50" height="50"> App for Seed Providers | X                               |                                     |
-| <img src="src/User_App.png" alt="User App" width="50" height="50"> User App             | X                                 |                                     |
-| <img src="src/Ai.png" alt="AI Assistance" width="50" height="50"> AI Assistance        | X                                 |                                     |
-| <img src="src/Transport_App.png" alt="Transport App" width="50" height="50"> Transport App        |                                   | X                                   |
-| <img src="src/Factory_App.png" alt="Factory App" width="50" height="50"> Factory App          |                                   | X                                   |
-| <img src="src/Whole_Seller_App.png" alt="Whole Seller App" width="50" height="50"> Whole Seller App     |                                   | X                                   |
+| <img src="src/Store_App.png" alt="Store App" width="50" height="40"> Store App            | X                                 |                                     |
+| <img src="src/Farmer_App.png" alt="Farmer App" width="50" height="40"> Farmer App           | X                                 |                                     |
+| <img src="src/Delivery_Men_App.png" alt="Delivery Men App" width="50" height="40"> Delivery Men App     | X                                 |                                     |
+| <img src="src/Store_Admin_App.png" alt="Store Admin App" width="50" height="40"> Store Admin App      | X                                 |                                     |
+| <img src="src/Restaurants_App.png" alt="Restaurants App" width="50" height="40"> Restaurants App      | X                                 |                                     |
+| <img src="src/App_for_Seed_Providers.png" alt="App for Seed Providers" width="50" height="40"> App for Seed Providers | X                               |                                     |
+| <img src="src/User_App.png" alt="User App" width="50" height="40"> User App             | X                                 |                                     |
+| <img src="src/Ai.png" alt="AI Assistance" width="40" height="40"> AI Assistance        | X                                 |                                     |
+| <img src="src/Transport_App.png" alt="Transport App" width="50" height="40"> Transport App        |                                   | X                                   |
+| <img src="src/Factory_App.png" alt="Factory App" width="50" height="40"> Factory App          |                                   | X                                   |
+| <img src="src/Whole_Seller_App.png" alt="Whole Seller App" width="50" height="40"> Whole Seller App     |                                   | X                                   |
 
 
 ![User App Interactions](src/user_app_interactions.gif)
