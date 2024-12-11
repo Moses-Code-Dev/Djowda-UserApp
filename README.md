@@ -41,6 +41,8 @@ The User App in the Djowda platform is designed to serve as the primary interfac
 | <img src="src/Factory_App.png" alt="Factory App" width="50" height="50"> Factory App          |                                   | X                                   |
 | <img src="src/Whole_Seller_App.png" alt="Whole Seller App" width="50" height="50"> Whole Seller App     |                                   | X                                   |
 
-![User App Interactions](src/User App Interactions diagram.html)
+
+![User App Interactions](src/user_app_interactions.gif)
+
 
 
