@@ -22,3 +22,19 @@ The User App in the Djowda platform is designed to serve as the primary interfac
 * **AI Assistance:** The app includes AI-driven chat and voice assistance to help users with their queries and provide support throughout their experience.
 * **Educational Content:** The app provides educational content about healthy eating and nutrition to encourage better food choices.
 * **Community Support:** Users can engage with the community, including selling, donating, and exchanging food from their gardens.
+
+## User App Interactions with Other Apps
+
+| App                  | Direct Interaction with User App? | Indirect Interaction with User App? |
+|----------------------|-----------------------------------|-------------------------------------|
+| Store App            | X                                 |                                     |
+| Farmer App           | X                                 |                                     |
+| Delivery Men App     | X                                 |                                     |
+| Store Admin App      | X                                 |                                     |
+| Restaurants App      | X                                 |                                     |
+| App for Seed Providers | X                               |                                     |
+| User App             | X                                 |                                     |
+| AI Assistance        | X                                 |                                     |
+| Transport App        |                                   | X                                   |
+| Factory App          |                                   | X                                   |
+| Whole Seller App     |                                   | X                                   |
