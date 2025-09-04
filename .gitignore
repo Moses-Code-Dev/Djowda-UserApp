@@ -14,3 +14,33 @@
 .cxx
 local.properties
 .vscode/settings.json
+
+# Ignore all IDE config files
+.idea/
+
+# Ignore all build output
+build/
+out/
+
+# Ignore Gradle and wrapper files except those needed
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Ignore OS files
+Thumbs.db
+
+# Ignore logs and crash reports
+*.log
+crashlytics.properties
+crashlytics-build.properties
+
+# Ignore keystores (Android signing keys, if applicable)
+*.keystore
+
+# Ignore environment files
+.env
+
+# Ignore additional editor folders
+.vscode/
+.vscode/*
