@@ -102,11 +102,7 @@
                             android:text="Ready to Help"
                             android:textAppearance="?attr/textAppearanceHeadline6" />
 
-                        <com.github.mikephil.charting.charts.PieChart
-                            android:id="@+id/chartReadyToHelp"
-                            android:layout_width="match_parent"
-                            android:layout_height="150dp"
-                            android:layout_marginTop="8dp" />
+
 
                     </LinearLayout>
 
@@ -149,11 +145,7 @@
                             android:text="In Need"
                             android:textAppearance="?attr/textAppearanceHeadline6" />
 
-                        <com.github.mikephil.charting.charts.PieChart
-                            android:id="@+id/chartInNeed"
-                            android:layout_width="match_parent"
-                            android:layout_height="150dp"
-                            android:layout_marginTop="8dp" />
+
 
                     </LinearLayout>
 

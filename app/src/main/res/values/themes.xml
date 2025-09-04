@@ -18,21 +18,21 @@
 
     <style name="Theme.DjowdaUser" parent="Base.Theme.DjowdaUser" />
 
-    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
-        <!-- Set the splash screen background, animated icon, and animation
-        duration. -->
-        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+<!--    <style name="Theme.App.Starting" parent="Theme.SplashScreen">-->
+<!--        &lt;!&ndash; Set the splash screen background, animated icon, and animation-->
+<!--        duration. &ndash;&gt;-->
+<!--        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>-->
 
-        <!-- Use windowSplashScreenAnimatedIcon to add a drawable or an animated
-             drawable. One of these is required. -->
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>
-        <!-- Required for animated icons. -->
-<!--        <item name="windowSplashScreenAnimationDuration">200</item>-->
+<!--        &lt;!&ndash; Use windowSplashScreenAnimatedIcon to add a drawable or an animated-->
+<!--             drawable. One of these is required. &ndash;&gt;-->
+<!--        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>-->
+<!--        &lt;!&ndash; Required for animated icons. &ndash;&gt;-->
+<!--&lt;!&ndash;        <item name="windowSplashScreenAnimationDuration">200</item>&ndash;&gt;-->
 
-        <!-- Set the theme of the Activity that directly follows your splash
-        screen. This is required. -->
-        <item name="postSplashScreenTheme">@style/Base.Theme.DjowdaUser</item>
-    </style>
+<!--        &lt;!&ndash; Set the theme of the Activity that directly follows your splash-->
+<!--        screen. This is required. &ndash;&gt;-->
+<!--        <item name="postSplashScreenTheme">@style/Base.Theme.DjowdaUser</item>-->
+<!--    </style>-->
 
 
 </resources>
