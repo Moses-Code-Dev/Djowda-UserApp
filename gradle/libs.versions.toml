@@ -21,15 +21,15 @@ firebaseAuth = "23.1.0"
 firebaseAnalytics = "22.1.2"
 firebaseDatabase = "21.0.0"
 firebaseStorage = "21.0.1"
-firebaseCrashlytics = "19.2.1"
+firebaseCrashlytics = "20.0.1"
 googleFirebaseCrashlytics = "3.0.2"
 leakcanaryAndroid = "2.14"
-firebaseUiAuth = "8.0.2"
-libphonenumber = "8.13.51"
+firebaseUiAuth = "9.0.0"
+libphonenumber = "9.0.13"
 
 googleGmsGoogleServicesVersion = "4.4.2"
-comGoogleGmsGoogleServices = "4.4.2"
-googleFirebaseCrashlyticsVersion = "3.0.2"
+comGoogleGmsGoogleServices = "4.4.3"
+googleFirebaseCrashlyticsVersion = "3.0.6"
 
 [libraries]
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
