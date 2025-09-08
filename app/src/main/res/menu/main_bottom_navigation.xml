@@ -3,17 +3,17 @@
 
 
 
-<!-- Dashboard -->
+   <!-- Home -->
     <item
         android:id="@+id/navigation_home"
         android:icon="@drawable/baseline_home_24"
         android:title="@string/home" />
 
-    <!-- Orders -->
+    <!-- Cart -->
     <item
-        android:id="@+id/navigation_stores"
-        android:icon="@drawable/baseline_storefront_24"
-        android:title="@string/stores" />
+        android:id="@+id/navigation_carts"
+        android:icon="@drawable/baseline_shopping_cart_24"
+        android:title="@string/cart" />
 
     <!-- Network -->
     <item
@@ -21,13 +21,14 @@
         android:icon="@drawable/baseline_handshake_24"
         android:title="@string/network" />
 
-    <!-- Products -->
+    <!-- Activities -->
     <item
-        android:id="@+id/navigation_cart"
-        android:icon="@drawable/baseline_shopping_cart_24"
-        android:title="@string/cart" />
+    android:id="@+id/navigation_Orders"
+    android:icon="@drawable/baseline_assignment_24"
+    android:title="@string/activities" />
 
-    <!-- More -->
+
+    <!-- Settings -->
     <item
         android:id="@+id/navigation_settings"
         android:icon="@drawable/baseline_settings_24"

@@ -125,4 +125,5 @@
     <string name="webrtc_connecting">WebRTC: Connecting…</string>
     <string name="webrtc_disconnected">WebRTC: Disconnected</string>
     <string name="webrtc_error">WebRTC: Error</string>
+    <string name="activities">Activities</string>
 </resources>
