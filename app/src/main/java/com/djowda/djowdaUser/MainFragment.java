@@ -48,12 +48,11 @@ public class MainFragment extends Fragment {
 
         bottomNavigationView = view.findViewById(R.id.main_nav_view);
 
-        if (homeFragmentMS == null) homeFragmentMS = new HomeFragmentMS();
-
-        if (msCartsFragment == null) msCartsFragment = MsCartsFragment.getInstance();
-        if (networkFragment == null) networkFragment = NetworkFragment.getInstance();
-        if (activitiesFragment == null) activitiesFragment = ActivitiesFragment.getInstance();
-        if (settingsFragment == null) settingsFragment = SettingsFragment.getInstance();
+    if (homeFragmentMS == null) homeFragmentMS = new HomeFragmentMS();
+    if (msCartsFragment == null) msCartsFragment = new MsCartsFragment();
+    if (networkFragment == null) networkFragment = new NetworkFragment();
+    if (activitiesFragment == null) activitiesFragment = new ActivitiesFragment();
+    if (settingsFragment == null) settingsFragment = new SettingsFragment();
 
 
         HandleBottomNavigationView();

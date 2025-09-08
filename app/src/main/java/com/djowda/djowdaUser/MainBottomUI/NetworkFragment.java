@@ -11,16 +11,7 @@ import android.view.ViewGroup;
 import com.djowda.djowdaUser.R;
 
 public class NetworkFragment extends Fragment {
-
-    // singleton pattern
-    private static NetworkFragment instance = null;
-
-    public static NetworkFragment getInstance() {
-        if (instance == null) {
-            instance = new NetworkFragment();
-        }
-        return instance;
-    }
+    // ...existing code...
 
     public NetworkFragment() {
         // Required empty public constructor

@@ -11,16 +11,7 @@ import android.view.ViewGroup;
 import com.djowda.djowdaUser.R;
 
 public class MsCartsFragment extends Fragment {
-
-    // singleton pattern
-    private static MsCartsFragment instance = null;
-
-    public static MsCartsFragment getInstance() {
-        if (instance == null) {
-            instance = new MsCartsFragment();
-        }
-        return instance;
-    }
+    // ...existing code...
 
     public MsCartsFragment() {
         // Required empty public constructor

@@ -11,16 +11,7 @@ import android.view.ViewGroup;
 import com.djowda.djowdaUser.R;
 
 public class ActivitiesFragment extends Fragment {
-
-    // singleton pattern
-    private static ActivitiesFragment instance = null;
-
-    public static ActivitiesFragment getInstance() {
-        if (instance == null) {
-            instance = new ActivitiesFragment();
-        }
-        return instance;
-    }
+    // ...existing code...
 
     public ActivitiesFragment() {
         // Required empty public constructor

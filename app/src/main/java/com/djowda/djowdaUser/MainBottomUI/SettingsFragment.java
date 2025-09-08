@@ -11,16 +11,7 @@ import android.view.ViewGroup;
 import com.djowda.djowdaUser.R;
 
 public class SettingsFragment extends Fragment {
-
-    // singleton pattern
-    private static SettingsFragment instance = null;
-
-    public static SettingsFragment getInstance() {
-        if (instance == null) {
-            instance = new SettingsFragment();
-        }
-        return instance;
-    }
+    // ...existing code...
 
     public SettingsFragment() {
         // Required empty public constructor
