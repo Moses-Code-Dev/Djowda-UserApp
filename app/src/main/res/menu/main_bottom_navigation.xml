@@ -23,7 +23,7 @@
 
     <!-- Activities -->
     <item
-    android:id="@+id/navigation_Orders"
+    android:id="@+id/navigation_Activities"
     android:icon="@drawable/baseline_assignment_24"
     android:title="@string/activities" />
 
