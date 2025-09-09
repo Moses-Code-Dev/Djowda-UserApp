@@ -9,6 +9,7 @@ import com.djowda.djowdaUser.R;
 
 public class NetworkFragment extends Fragment {
 
+
     public NetworkFragment() {
         // Required empty public constructor
     }

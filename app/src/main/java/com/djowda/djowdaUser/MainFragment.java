@@ -36,6 +36,7 @@ public class MainFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
         bottomNavigationView = view.findViewById(R.id.main_nav_view);
+
         HandleBottomNavigationView();
         return view;
     }

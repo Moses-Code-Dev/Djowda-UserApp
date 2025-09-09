@@ -9,6 +9,7 @@ import com.djowda.djowdaUser.R;
 
 public class SettingsFragment extends Fragment {
 
+
     public SettingsFragment() {
         // Required empty public constructor
     }

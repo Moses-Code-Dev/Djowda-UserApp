@@ -9,6 +9,7 @@ import com.djowda.djowdaUser.R;
 
 public class MsCartsFragment extends Fragment {
 
+
     public MsCartsFragment() {
         // Required empty public constructor
     }
