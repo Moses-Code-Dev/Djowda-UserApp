@@ -1,4 +1,4 @@
-name: User App Issue
+name: Djowda User Issue Template
 description: Report a bug, suggest a feature, or request an improvement for the Djowda User App
 title: "[UserApp]: "
 labels: ["user-app", "needs-triage"]
@@ -22,7 +22,7 @@ body:
     attributes:
       label: Description
       description: Please describe the issue clearly.
-      placeholder: A clear and concise description of the problem or idea.
+      placeholder: "A clear and concise description of the problem or idea."
     validations:
       required: true
 
@@ -31,10 +31,7 @@ body:
     attributes:
       label: Steps to Reproduce (for bugs)
       description: If this is a bug, please list the steps to reproduce.
-      placeholder: |
-        1. Go to '...'
-        2. Tap on '...'
-        3. See error
+      placeholder: "1. Go to '...' → 2. Tap on '...' → 3. See error"
     validations:
       required: false
 
@@ -93,6 +90,17 @@ body:
     attributes:
       label: Screenshots / Logs
       description: Add any screenshots, error logs, or crash reports here.
-      placeholder: Drag & drop files, or paste logs here.
+      placeholder: "Drag & drop files, or paste logs here."
     validations:
       required: false
+
+  - type: dropdown
+    id: contributor-intent
+    attributes:
+      label: Would you like to work on this issue?
+      description: Let us know if you want to be assigned to this issue.
+      options:
+        - "None"
+        - "Yes"
+    validations:
+      required: true
