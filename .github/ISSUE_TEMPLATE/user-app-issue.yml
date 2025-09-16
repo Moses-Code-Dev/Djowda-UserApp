@@ -1,0 +1,98 @@
+name: User App Issue
+description: Report a bug, suggest a feature, or request an improvement for the Djowda User App
+title: "[UserApp]: "
+labels: ["user-app", "needs-triage"]
+assignees: []
+
+body:
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What type of issue are you reporting?
+      options:
+        - 🐞 Bug Report
+        - ✨ Feature Request
+        - 🛠 Improvement
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Please describe the issue clearly.
+      placeholder: A clear and concise description of the problem or idea.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce (for bugs)
+      description: If this is a bug, please list the steps to reproduce.
+      placeholder: |
+        1. Go to '...'
+        2. Tap on '...'
+        3. See error
+    validations:
+      required: false
+
+  - type: input
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: "Example: The order should be placed successfully."
+    validations:
+      required: false
+
+  - type: input
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: "Example: The app crashed after confirming order."
+    validations:
+      required: false
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Related Component
+      description: Which part of the app does this issue relate to?
+      options:
+        - 🛒 Catalog Browsing
+        - 📦 Order Handling
+        - 👤 Account Management
+        - 🔔 Notifications
+        - ⚙️ Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App Version / Build
+      description: Which version/build are you using?
+      placeholder: "Example: v1.2.3 (Build 45)"
+    validations:
+      required: false
+
+  - type: input
+    id: device
+    attributes:
+      label: Device Info
+      description: Which device and OS are you using?
+      placeholder: "Example: Samsung A32, Android 13"
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Logs
+      description: Add any screenshots, error logs, or crash reports here.
+      placeholder: Drag & drop files, or paste logs here.
+    validations:
+      required: false
