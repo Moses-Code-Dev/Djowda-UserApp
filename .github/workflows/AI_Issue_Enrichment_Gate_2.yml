@@ -1,0 +1,232 @@
+name: AI Issue Enrichment Gate 2
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+  contents: read
+  models: read   # Required for GitHub Models
+
+jobs:
+  enrich:
+    # Only run if the issue was just labeled as 'triaged'
+    if: github.event.label.name == 'triaged'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Analyze and enrich validated issue
+        id: analyze
+        uses: actions/ai-inference@v1
+        with:
+          prompt: |
+            You are an assistant helping maintainers of the Djowda User App platform by enriching validated issues.
+            These issues have already passed Gate 1 (legit triage), so they contain enough detail to analyze.
+            
+            Your task:
+            1. **Assign Context Labels** based on the issue content:
+               - Issue Type → bug, feature-request, improvement
+               - Component → catalog, orders, account, notifications, payments, performance, ui-ux, other
+               - Severity → critical, high, medium, low (based on urgency/impact)
+               - Optional tags → needs-reproduction, good-first-issue, documentation, backend, frontend
+            
+            2. **Suggest a Short Possible Fix/Hint**:
+               - Provide a 1-3 sentence actionable suggestion or diagnostic step
+               - Be concrete but lightweight (think "first-aid tip")
+               - Focus on immediate troubleshooting or workarounds users can try
+               - For features, suggest temporary alternatives if available
+            
+            Severity Guidelines:
+            - critical: App crashes, data loss, payment issues, security vulnerabilities
+            - high: Major features broken, frequent errors, significant UX problems
+            - medium: Minor features broken, occasional errors, moderate inconvenience
+            - low: Cosmetic issues, rare edge cases, minor improvements
+            
+            Issue Title: ${{ github.event.issue.title }}
+            Issue Body: ${{ github.event.issue.body }}
+            
+            Output format (JSON only, no other text):
+            {
+              "labels": ["bug", "catalog", "high"],
+              "hint": "Check if the product list API returns valid data; a 404 usually indicates wrong catalog ID."
+            }
+          system-prompt: You are a technical assistant for the Djowda e-commerce mobile app. Analyze issues precisely and provide practical, actionable hints. Be specific to mobile app development (React Native/Flutter) and e-commerce contexts.
+          model: openai/gpt-4o-mini
+          temperature: 0.3
+
+      - name: Parse AI response and apply labels
+        id: apply_labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              // Parse the AI response
+              const aiResponse = `${{ steps.analyze.outputs.response }}`;
+              console.log('AI Response:', aiResponse);
+            
+              // Extract JSON from the response (in case there's extra text)
+              const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+              if (!jsonMatch) {
+                throw new Error('No valid JSON found in AI response');
+              }
+            
+              const analysis = JSON.parse(jsonMatch[0]);
+            
+              // Map friendly names to actual label names
+              const labelMapping = {
+                // Issue types
+                'bug': '🐞 bug',
+                'feature-request': '✨ feature-request',
+                'improvement': '🛠 improvement',
+            
+                // Components
+                'catalog': '🛒 catalog',
+                'orders': '📦 orders',
+                'account': '👤 account',
+                'notifications': '🔔 notifications',
+                'payments': '💳 payments',
+                'performance': '⚡ performance',
+                'ui-ux': '🎨 ui-ux',
+                'other': '⚙️ other',
+            
+                // Severity
+                'critical': 'priority: critical',
+                'high': 'priority: high',
+                'medium': 'priority: medium',
+                'low': 'priority: low',
+            
+                // Additional tags
+                'needs-reproduction': 'needs-reproduction',
+                'good-first-issue': 'good-first-issue',
+                'documentation': '📚 documentation',
+                'backend': 'backend',
+                'frontend': 'frontend'
+              };
+            
+              // Convert AI labels to GitHub labels
+              const labelsToAdd = analysis.labels
+                .map(label => labelMapping[label] || label)
+                .filter(label => label); // Remove any undefined mappings
+            
+              // Apply labels
+              if (labelsToAdd.length > 0) {
+                await github.rest.issues.addLabels({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  labels: labelsToAdd
+                });
+                console.log('Labels added:', labelsToAdd);
+              }
+            
+              // Store hint for next step
+              core.setOutput('hint', analysis.hint || 'Our team will review your issue soon.');
+              core.setOutput('labels', labelsToAdd.join(', '));
+              core.setOutput('success', 'true');
+            
+            } catch (error) {
+              console.error('Error processing AI response:', error);
+              core.setOutput('success', 'false');
+              core.setOutput('hint', 'Our team will review your issue soon and provide assistance.');
+              core.setOutput('labels', '');
+            }
+
+      - name: Comment with analysis and hint
+        if: steps.apply_labels.outputs.success == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const hint = `${{ steps.apply_labels.outputs.hint }}`;
+            const labels = `${{ steps.apply_labels.outputs.labels }}`;
+            
+            const comment = `<p align="center">
+              <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="100" />
+            </p>
+
+            ## 🤖 AI Analysis Complete
+
+            Thank you for your detailed issue report! I've analyzed it and added relevant labels to help our maintainers prioritize and address it effectively.
+
+            ### 📌 Applied Labels
+            ${labels.split(', ').map(label => `\`${label}\``).join(' ')}
+
+            ### 💡 Quick Tip While You Wait
+            ${hint}
+
+            ### 📝 What's Next?
+            - A maintainer will review your issue based on its priority
+            - You may be asked for additional details if needed
+            - Feel free to add more context or updates as comments
+
+            ---
+            <sub>This is an automated analysis to help speed up issue resolution. Human review will follow.</sub>`;
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Fallback comment on analysis failure
+        if: steps.apply_labels.outputs.success == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `<p align="center">
+              <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="100" />
+            </p>
+
+            ## ✅ Issue Validated
+
+            Thank you for your issue report! While our AI assistant couldn't automatically categorize this issue, it has been marked as valid and will be reviewed by our maintainers soon.
+
+            ### 📝 What's Next?
+            - A maintainer will manually review and label your issue
+            - You may be asked for additional details if needed
+            - Feel free to add more context or updates as comments
+
+            ---
+            <sub>Our team appreciates your contribution to improving the Djowda platform!</sub>`;
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Add enriched label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Mark that this issue has been enriched
+            await github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['enriched']
+            });
+
+      - name: Auto-assign to maintainers for critical issues
+        if: contains(steps.apply_labels.outputs.labels, 'critical')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Auto-assign critical issues to maintainers
+            // Add your maintainer usernames here
+            const maintainers = ['maintainer1', 'maintainer2']; // Replace with actual usernames
+            
+            await github.rest.issues.addAssignees({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              assignees: maintainers.slice(0, 2) // GitHub limits to 10 assignees
+            });
+            
+            // Add urgent comment for critical issues
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚨 **CRITICAL ISSUE DETECTED** 🚨\n\nThis issue has been marked as critical and auto-assigned to maintainers for immediate attention.\n\ncc: ${maintainers.map(m => `@${m}`).join(' ')}`
+            });
