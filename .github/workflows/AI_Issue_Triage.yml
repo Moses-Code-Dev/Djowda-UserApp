@@ -1,30 +1,49 @@
-name: AI Issue Triage
-
+name: AI Issue Triage Gate 1
 on:
   issues:
     types: [opened, edited]
 
 permissions:
   issues: write
+  contents: read
+  models: read   # Required for GitHub Models
 
 jobs:
   triage:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Classify issue with GitHub Model
+      - name: Use GitHub Models to classify issue
         id: classify
-        uses: github/issue-classifier@v1
+        uses: actions/ai-inference@v1
         with:
-          model: gpt-4.1-mini
-          instructions: |
-            You are triaging issues for the Djowda platform.
-            Decide if the issue is "legit" (clear bug/feature request with enough detail)
-            or "not_legit" (spam, incomplete, missing steps).
-            Return ONLY one word: legit or not_legit.
+          prompt: |
+            You are triaging issues for the Djowda User App platform. Analyze this issue against our template requirements:
+            
+            REQUIRED for "legit" classification:
+            - Issue Type must be selected (🐞 Bug Report, ✨ Feature Request, or 🛠 Improvement)
+            - Description must be clear and meaningful (not just "doesn't work" or similar)
+            - Related Component must be specified (🛒 Catalog, 📦 Orders, 👤 Account, 🔔 Notifications, ⚙️ Other)
+            
+            For BUG REPORTS specifically, also check:
+            - If it's a bug, Steps to Reproduce should be provided
+            - Expected vs Actual Behavior should be described
+            
+            SPAM indicators (mark as "not_legit"):
+            - Generic/templated text unrelated to Djowda app
+            - Promotional content or links
+            - Nonsensical or AI-generated content
+            - Empty or minimal descriptions like "fix this" or "doesn't work"
+            
+            Issue Title: ${{ github.event.issue.title }}
+            Issue Body: ${{ github.event.issue.body }}
+            
+            Analyze the completeness and legitimacy. Respond with exactly one word: legit or not_legit
+          system-prompt: You are a helpful assistant that triages GitHub issues for the Djowda User App. Focus on ensuring issues follow the template structure and provide sufficient detail for developers to act on.
+          model: openai/gpt-4o-mini
+          temperature: 0.2
 
       - name: Comment for legit issue
-        if: steps.classify.outputs.result == 'legit'
+        if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
         uses: actions/github-script@v7
         with:
           script: |
@@ -32,21 +51,27 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "👋 Thank you for your contribution to the Djowda platform! 🎉 Your issue has been marked as **valid**. The team will take a look soon."
+              body: `<p align="center">
+              <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="120" />
+            </p>
+
+            👋 Hi @${{ github.event.issue.user.login }}!  
+            Thanks for your contribution to the Djowda platform! 🎉  
+            Your issue has been marked as **valid**. The team will take a look soon. 🚀`
             })
 
-      - name: Label as triaged
-        if: steps.classify.outputs.result == 'legit'
+      - name: Add label as triaged
+        if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.addLabels({
+            github.rest.issues.addLabels({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ['triaged']
             })
-            await github.rest.issues.removeLabel({
+            github.rest.issues.removeLabel({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -54,7 +79,7 @@ jobs:
             }).catch(() => {})
 
       - name: Comment for not legit issue
-        if: steps.classify.outputs.result == 'not_legit'
+        if: contains(steps.classify.outputs.response, 'not_legit')
         uses: actions/github-script@v7
         with:
           script: |
@@ -62,23 +87,59 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "⚠️ Thanks for opening an issue! It looks like some important details may be missing.\n\nPlease update it with:\n- Steps to reproduce\n- Expected behavior\n- Component (User App, Store App, Farmer App, etc.)"
+              body: `<p align="center">
+              <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="120" />
+            </p>
+
+            ⚠️ Hi @${{ github.event.issue.user.login }}!  
+            Thanks for opening an issue! It looks like some important details may be missing or incomplete.
+
+            Please ensure your issue includes:
+
+            ✅ Issue Type - Select Bug Report, Feature Request, or Improvement  
+            ✅ Clear Description - Explain the problem or idea in detail  
+            ✅ Related Component - Choose which part of the app (🛒 Catalog, 📦 Orders, 👤 Account, etc.)
+
+            For Bug Reports, also include:  
+            🔍 Steps to Reproduce - How can we recreate the issue?  
+            📋 Expected vs Actual Behavior - What should happen vs what actually happens?  
+            📱 Device Info - Your device model and Android/iOS version
+
+            Please update your issue using our template and we'll review it promptly! 🚀`
             })
 
-      - name: Label as needs-info
-        if: steps.classify.outputs.result == 'not_legit'
+      - name: Add label as needs-info
+        if: contains(steps.classify.outputs.response, 'not_legit')
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.addLabels({
+            github.rest.issues.addLabels({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ['needs-info']
             })
-            await github.rest.issues.removeLabel({
+            github.rest.issues.removeLabel({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               name: 'triaged'
             }).catch(() => {})
+
+      - name: Handle classification errors
+        if: ${{ !contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit') }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('AI classification failed or returned unexpected result:', '${{ steps.classify.outputs.response }}')
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `<p align="center">
+              <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="120" />
+            </p>
+
+            🤖 Hi @${{ github.event.issue.user.login }}!  
+            Our AI triage is temporarily unavailable. A maintainer will review this issue manually. Thank you for your patience! 🙏`
+            })
