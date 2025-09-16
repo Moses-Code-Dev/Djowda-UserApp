@@ -1,0 +1,84 @@
+name: AI Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Classify issue with GitHub Model
+        id: classify
+        uses: github/issue-classifier@v1
+        with:
+          model: gpt-4.1-mini
+          instructions: |
+            You are triaging issues for the Djowda platform.
+            Decide if the issue is "legit" (clear bug/feature request with enough detail)
+            or "not_legit" (spam, incomplete, missing steps).
+            Return ONLY one word: legit or not_legit.
+
+      - name: Comment for legit issue
+        if: steps.classify.outputs.result == 'legit'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "👋 Thank you for your contribution to the Djowda platform! 🎉 Your issue has been marked as **valid**. The team will take a look soon."
+            })
+
+      - name: Label as triaged
+        if: steps.classify.outputs.result == 'legit'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['triaged']
+            })
+            await github.rest.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'needs-info'
+            }).catch(() => {})
+
+      - name: Comment for not legit issue
+        if: steps.classify.outputs.result == 'not_legit'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "⚠️ Thanks for opening an issue! It looks like some important details may be missing.\n\nPlease update it with:\n- Steps to reproduce\n- Expected behavior\n- Component (User App, Store App, Farmer App, etc.)"
+            })
+
+      - name: Label as needs-info
+        if: steps.classify.outputs.result == 'not_legit'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['needs-info']
+            })
+            await github.rest.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'triaged'
+            }).catch(() => {})
