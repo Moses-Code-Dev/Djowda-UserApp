@@ -17,17 +17,30 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           prompt: |
-            You are triaging issues for the Djowda platform.
-            Classify if the issue is "legit" (clear bug/feature request with enough detail)
-            or "not_legit" (spam, incomplete, missing steps).
+            You are triaging issues for the Djowda User App platform. Analyze this issue against our template requirements:
+            
+            REQUIRED for "legit" classification:
+            - Issue Type must be selected (🐞 Bug Report, ✨ Feature Request, or 🛠 Improvement)
+            - Description must be clear and meaningful (not just "doesn't work" or similar)
+            - Related Component must be specified (🛒 Catalog, 📦 Orders, 👤 Account, 🔔 Notifications, ⚙️ Other)
+            
+            For BUG REPORTS specifically, also check:
+            - If it's a bug, Steps to Reproduce should be provided
+            - Expected vs Actual Behavior should be described
+            
+            SPAM indicators (mark as "not_legit"):
+            - Generic/templated text unrelated to Djowda app
+            - Promotional content or links
+            - Nonsensical or AI-generated content
+            - Empty or minimal descriptions like "fix this" or "doesn't work"
             
             Issue Title: ${{ github.event.issue.title }}
             Issue Body: ${{ github.event.issue.body }}
             
-            Respond with exactly one word: legit or not_legit
-          system-prompt: You are a helpful assistant that helps triage GitHub issues. Be thorough but concise in your analysis.
+            Analyze the completeness and legitimacy. Respond with exactly one word: legit or not_legit
+          system-prompt: You are a helpful assistant that triages GitHub issues for the Djowda User App. Focus on ensuring issues follow the template structure and provide sufficient detail for developers to act on.
           model: openai/gpt-4o-mini
-          temperature: 0.1
+          temperature: 0.2
 
       - name: Comment for legit issue
         if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
@@ -68,7 +81,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "⚠️ Thanks for opening an issue! It looks like some important details may be missing.\n\nPlease update it with:\n- Steps to reproduce\n- Expected behavior\n- Component (User App, Store App, Farmer App, etc.)"
+              body: "⚠️ Thanks for opening an issue! It looks like some important details may be missing or incomplete.\n\n**Please ensure your issue includes:**\n\n✅ **Issue Type** - Select Bug Report, Feature Request, or Improvement\n✅ **Clear Description** - Explain the problem or idea in detail\n✅ **Related Component** - Choose which part of the app (🛒 Catalog, 📦 Orders, 👤 Account, etc.)\n\n**For Bug Reports, also include:**\n🔍 **Steps to Reproduce** - How can we recreate the issue?\n📋 **Expected vs Actual Behavior** - What should happen vs what actually happens?\n📱 **Device Info** - Your device model and Android/iOS version\n\n*Please update your issue using our template and we'll review it promptly!*"
             })
 
       - name: Add label as needs-info
