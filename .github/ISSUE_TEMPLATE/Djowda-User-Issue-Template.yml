@@ -100,7 +100,7 @@ body:
       label: Would you like to work on this issue?
       description: Let us know if you want to be assigned to this issue.
       options:
-        - "None"
+        - None
         - "Yes"
     validations:
       required: true
