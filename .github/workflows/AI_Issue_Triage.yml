@@ -1,5 +1,4 @@
 name: AI Issue Triage Gate 1
-
 on:
   issues:
     types: [opened, edited]
@@ -7,7 +6,7 @@ on:
 permissions:
   issues: write
   contents: read
-  models: read   # must include this to use GitHub Models :contentReference[oaicite:3]{index=3}
+  models: read   # Required for GitHub Models API
 
 jobs:
   triage:
@@ -15,16 +14,42 @@ jobs:
     steps:
       - name: Use GitHub Models to classify issue
         id: classify
-        uses: github/ai-inference@v1  # hypothetical official GitHub Models inference action
-        with:
-          model: gpt-4o-mini  # or whatever model available in your repo/org
-          input: |
-            You are triaging issues for the Djowda platform.
-            Classify if the issue is "legit" (clear bug/feature request with enough detail)
-            or "not_legit" (spam, incomplete, missing steps).
-            Return exactly one word: legit or not_legit.
-            Issue Title: ${{ github.event.issue.title }}
-            Issue Body: ${{ github.event.issue.body }}
+        run: |
+          # Prepare the prompt
+          PROMPT=$(cat <<EOF
+          You are triaging issues for the Djowda platform.
+          Classify if the issue is "legit" (clear bug/feature request with enough detail)
+          or "not_legit" (spam, incomplete, missing steps).
+          Return exactly one word: legit or not_legit.
+          
+          Issue Title: ${{ github.event.issue.title }}
+          Issue Body: ${{ github.event.issue.body }}
+          EOF
+          )
+          
+          # Call GitHub Models API
+          RESPONSE=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"model\": \"gpt-4o-mini\",
+              \"messages\": [
+                {
+                  \"role\": \"user\",
+                  \"content\": \"$PROMPT\"
+                }
+              ],
+              \"max_tokens\": 10,
+              \"temperature\": 0.1
+            }" \
+            "https://models.github.ai/v1/chat/completions")
+          
+          # Extract the classification result
+          CLASSIFICATION=$(echo "$RESPONSE" | jq -r '.choices[0].message.content' | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+          
+          # Set output for subsequent steps
+          echo "result=$CLASSIFICATION" >> $GITHUB_OUTPUT
+          echo "Classification result: $CLASSIFICATION"
 
       - name: Comment for legit issue
         if: steps.classify.outputs.result == 'legit'
@@ -85,3 +110,16 @@ jobs:
               repo: context.repo.repo,
               name: 'triaged'
             }).catch(() => {})
+
+      - name: Handle classification errors
+        if: steps.classify.outputs.result != 'legit' && steps.classify.outputs.result != 'not_legit'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('AI classification failed or returned unexpected result:', '${{ steps.classify.outputs.result }}')
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "🤖 AI triage is temporarily unavailable. A maintainer will review this issue manually."
+            })
