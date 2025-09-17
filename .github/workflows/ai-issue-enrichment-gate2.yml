@@ -43,23 +43,41 @@ jobs:
             These issues have already passed Gate 1 (legit triage), so they contain enough detail to analyze.
             
             Your task:
-            1. **Assign Context Labels** based on the issue content:
+            1. **Assign Context Labels**:
                - Issue Type → bug, feature-request, improvement
                - Component → catalog, orders, account, notifications, payments, performance, ui-ux, other
                - Severity → critical, high, medium, low (based on urgency/impact)
-               - Optional tags → needs-reproduction, good-first-issue, documentation, backend, frontend
+            
+               Detection rules:
+               - BUG: Look for "error", "crash", "not working", "broken", "fails", "expected vs actual"
+               - FEATURE: Look for "add", "new", "support", "implement", "would like", "could you"
+               - IMPROVEMENT: Look for "optimize", "enhance", "refactor", "slow", "performance", "better"
+            
+               Component detection keywords:
+               - CATALOG: "product", "item", "listing", "search", "category", "filter"
+               - ORDERS: "cart", "checkout", "purchase", "order", "payment process"
+               - ACCOUNT: "login", "signup", "profile", "password", "authentication"
+               - NOTIFICATIONS: "push", "alert", "notification", "reminder", "message"
+               - PAYMENTS: "payment", "transaction", "wallet", "refund", "billing"
+               - PERFORMANCE: "slow", "lag", "freeze", "loading", "optimization"
+               - UI-UX: "design", "layout", "button", "screen", "display", "interface"
             
             2. **Suggest a Short Possible Fix/Hint**:
-               - Provide a 1-3 sentence actionable suggestion or diagnostic step
-               - Be concrete but lightweight (think "first-aid tip")
-               - Focus on immediate troubleshooting or workarounds users can try
-               - For features, suggest temporary alternatives if available
+               - Provide 2-3 sentences MAX of actionable suggestions
+               - Focus on immediate workarounds or diagnostic steps
+               - Be specific to mobile app context (React Native/Flutter)
+               - Include common troubleshooting for the Djowda app
+            
+               Examples of good hints:
+               - "If notifications aren't working, check Settings > Notifications > Djowda App and ensure permissions are enabled. Try logging out and back in to refresh the push token."
+               - "For catalog loading issues, pull down to refresh. Clear app cache in Settings if products still don't appear."
+               - "Login failures often relate to expired sessions. Try 'Forgot Password' to reset credentials, or check your internet connection."
             
             Severity Guidelines:
-            - critical: App crashes, data loss, payment issues, security vulnerabilities
-            - high: Major features broken, frequent errors, significant UX problems
-            - medium: Minor features broken, occasional errors, moderate inconvenience
-            - low: Cosmetic issues, rare edge cases, minor improvements
+            - critical: App crashes, data loss, payment failures, security issues, complete feature breakdown
+            - high: Major features broken, frequent errors, blocks user workflow
+            - medium: Minor features affected, workaround available, moderate inconvenience
+            - low: Cosmetic issues, rare edge cases, nice-to-have improvements
             
             Issue Title: ${{ github.event.inputs.issue_title }}
             Issue Body: ${{ github.event.inputs.issue_body }}
@@ -67,11 +85,12 @@ jobs:
             Output format (JSON only, no other text):
             {
               "labels": ["bug", "catalog", "high"],
-              "hint": "Check if the product list API returns valid data; a 404 usually indicates wrong catalog ID."
+              "hint": "Check if products load after pull-to-refresh. If not, clear app cache in Settings > Apps > Djowda > Clear Cache and restart the app.",
+              "technical_note": "Likely caused by stale cache or API timeout. Check network logs for 404/500 errors on /api/catalog endpoint."
             }
-          system-prompt: You are a technical assistant for the Djowda e-commerce mobile app. Analyze issues precisely and provide practical, actionable hints. Be specific to mobile app development (React Native/Flutter) and e-commerce contexts.
-          model: openai/gpt-4o-mini
-          temperature: 0.3
+          system-prompt: You are a technical assistant for the Djowda e-commerce mobile app. Provide practical, user-friendly hints and technical notes for maintainers. Be specific and actionable.
+          model: openai/gpt-4.1
+          temperature: 0.2
 
       # Step 3: Parse AI response and apply labels to the issue
       - name: Parse AI response and apply labels
@@ -96,14 +115,14 @@ jobs:
               const analysis = JSON.parse(jsonMatch[0]);
               console.log('Parsed analysis:', analysis);
             
-              // Label mapping: convert AI labels to GitHub label format
+              // Enhanced label mapping with emojis
               const labelMapping = {
                 // Issue types
                 'bug': '🐞 bug',
                 'feature-request': '✨ feature-request',
                 'improvement': '🛠 improvement',
             
-                // Components (different parts of the app)
+                // Components
                 'catalog': '🛒 catalog',
                 'orders': '📦 orders',
                 'account': '👤 account',
@@ -113,24 +132,30 @@ jobs:
                 'ui-ux': '🎨 ui-ux',
                 'other': '⚙️ other',
             
-                // Priority/Severity levels
-                'critical': 'priority: critical',
-                'high': 'priority: high',
-                'medium': 'priority: medium',
-                'low': 'priority: low',
+                // Priority/Severity
+                'critical': '🔴 critical',
+                'high': '🟠 high',
+                'medium': '🟡 medium',
+                'low': '🟢 low',
             
-                // Additional classification tags
-                'needs-reproduction': 'needs-reproduction',
-                'good-first-issue': 'good-first-issue',
+                // Additional tags
+                'needs-reproduction': '🔍 needs-reproduction',
+                'good-first-issue': '👋 good-first-issue',
                 'documentation': '📚 documentation',
-                'backend': 'backend',
-                'frontend': 'frontend'
+                'backend': '🔧 backend',
+                'frontend': '🎨 frontend',
+                'mobile': '📱 mobile',
+                'android': '🤖 android',
+                'ios': '🍎 ios'
               };
             
               // Convert AI-suggested labels to GitHub labels
               const labelsToAdd = analysis.labels
                 .map(label => labelMapping[label] || label)
-                .filter(label => label); // Remove any undefined mappings
+                .filter(label => label);
+            
+              // Always add the 'triaged' label to show it's been processed
+              labelsToAdd.push('✅ triaged');
             
               // Apply all the labels to the issue
               if (labelsToAdd.length > 0) {
@@ -145,21 +170,26 @@ jobs:
             
               // Store outputs for use in next steps
               core.setOutput('hint', analysis.hint || 'Our team will review your issue soon.');
+              core.setOutput('technical_note', analysis.technical_note || '');
               core.setOutput('labels', labelsToAdd.join(', '));
               core.setOutput('success', 'true');
               core.setOutput('issue_number', issueNumber.toString());
             
-              // Check if this is a critical issue
+              // Check priority level
               const isCritical = labelsToAdd.some(label => label.includes('critical'));
+              const isHigh = labelsToAdd.some(label => label.includes('high'));
               core.setOutput('is_critical', isCritical.toString());
+              core.setOutput('is_high_priority', (isCritical || isHigh).toString());
             
             } catch (error) {
               console.error('Error processing AI response:', error);
               core.setOutput('success', 'false');
               core.setOutput('hint', 'Our team will review your issue soon and provide assistance.');
+              core.setOutput('technical_note', '');
               core.setOutput('labels', '');
               core.setOutput('issue_number', '${{ github.event.inputs.issue_number }}');
               core.setOutput('is_critical', 'false');
+              core.setOutput('is_high_priority', 'false');
             }
 
       # Step 4: Post enrichment comment with analysis results
@@ -170,7 +200,18 @@ jobs:
           script: |
             const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
             const hint = `${{ steps.apply_labels.outputs.hint }}`;
+            const technicalNote = `${{ steps.apply_labels.outputs.technical_note }}`;
             const labels = `${{ steps.apply_labels.outputs.labels }}`;
+            const isCritical = '${{ steps.apply_labels.outputs.is_critical }}' === 'true';
+            const isHighPriority = '${{ steps.apply_labels.outputs.is_high_priority }}' === 'true';
+            
+            // Determine priority emoji and message
+            let priorityMessage = '';
+            if (isCritical) {
+              priorityMessage = '### 🚨 CRITICAL PRIORITY\nThis issue will receive immediate attention from our team.';
+            } else if (isHighPriority) {
+              priorityMessage = '### 🟠 HIGH PRIORITY\nThis issue will be prioritized for review.';
+            }
             
             // Create a formatted comment with the enrichment results
             const comment = `<p align="center">
@@ -181,19 +222,32 @@ jobs:
 
             Thank you for your detailed issue report! I've analyzed it and added relevant labels to help our maintainers prioritize and address it effectively.
 
+            ${priorityMessage}
+
             ### 📌 Applied Labels
             ${labels.split(', ').map(label => `\`${label}\``).join(' ')}
 
-            ### 💡 Quick Tip While You Wait
-            ${hint}
+            ### 💡 Quick Solution/Workaround
+            > **While waiting for a fix, try this:**
+            > 
+            > ${hint}
 
-            ### 📝 What's Next?
-            - A maintainer will review your issue based on its priority
-            - You may be asked for additional details if needed
-            - Feel free to add more context or updates as comments
+            ${technicalNote ? `### 🔧 Technical Note for Maintainers
+            <details>
+            <summary>Click to expand technical details</summary>
+            
+            ${technicalNote}
+            </details>` : ''}
+
+            ### 📝 What Happens Next?
+            1. **Immediate**: Try the suggested workaround above
+            2. **Within 24-48h**: A maintainer will review based on priority
+            3. **Updates**: You'll be notified of any progress or if we need more info
+            4. **Resolution**: We'll update you when a fix is deployed
 
             ---
-            <sub>This is an automated analysis to help speed up issue resolution. Human review will follow.</sub>`;
+            <sub>🤖 This automated analysis helps us respond faster. Human review follows based on priority.</sub>
+            <sub>💬 Feel free to add more details or let us know if the workaround helps!</sub>`;
             
             await github.rest.issues.createComment({
               issue_number: issueNumber,
@@ -218,10 +272,17 @@ jobs:
 
             ## ✅ Issue Validated
 
-            Thank you for your issue report! While our AI assistant couldn't automatically categorize this issue, it has been marked as valid and will be reviewed by our maintainers soon.
+            Thank you for your issue report! Our AI assistant is temporarily unable to auto-categorize, but your issue has been marked as valid.
+
+            ### 💡 General Troubleshooting Tips
+            While waiting for review, you might try:
+            - **For app issues**: Force close and restart the Djowda app
+            - **For sync problems**: Check your internet connection and pull to refresh
+            - **For login issues**: Try logging out and back in, or use "Forgot Password"
+            - **For display issues**: Clear the app cache in your device settings
 
             ### 📝 What's Next?
-            - A maintainer will manually review and label your issue
+            - A maintainer will manually review and label your issue within 24-48 hours
             - You may be asked for additional details if needed
             - Feel free to add more context or updates as comments
 
@@ -237,61 +298,93 @@ jobs:
             
             console.log('Posted fallback comment on issue #' + issueNumber);
 
-      # Step 6: Mark the issue as enriched
+      # Step 6: Add enriched label
       - name: Add enriched label
         uses: actions/github-script@v7
         with:
           script: |
             const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
             
-            // Add the 'enriched' label to indicate AI analysis is complete
+            // Add the 'ai-enriched' label to indicate AI analysis is complete
             await github.rest.issues.addLabels({
               issue_number: issueNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: ['enriched']
+              labels: ['🤖 ai-enriched']
             });
             
-            console.log('Added enriched label to issue #' + issueNumber);
+            console.log('Added ai-enriched label to issue #' + issueNumber);
 
-      # Step 7: Auto-assign maintainers for critical issues
-      - name: Auto-assign to maintainers for critical issues
-        if: steps.apply_labels.outputs.is_critical == 'true'
+      # Step 7: Auto-assign for high priority issues
+      - name: Auto-assign to maintainers for high priority issues
+        if: steps.apply_labels.outputs.is_high_priority == 'true'
         uses: actions/github-script@v7
         with:
           script: |
             const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
+            const isCritical = '${{ steps.apply_labels.outputs.is_critical }}' === 'true';
             
-            // TODO: Replace these with your actual maintainer GitHub usernames
-            const maintainers = ['maintainer1', 'maintainer2']; 
+            // TODO: Replace with your actual maintainer GitHub usernames
+            const maintainers = ['maintainer1', 'maintainer2'];
+            const criticalMaintainers = ['lead-maintainer', 'maintainer1']; // For critical issues
             
             try {
-              // Assign critical issues to maintainers
+              const assignees = isCritical ? criticalMaintainers : maintainers;
+            
+              // Assign to maintainers
               await github.rest.issues.addAssignees({
                 issue_number: issueNumber,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                assignees: maintainers.slice(0, 2) // GitHub limits to 10 assignees, we take first 2
+                assignees: assignees.slice(0, 2) // Take first 2
               });
             
-              console.log('Assigned maintainers to critical issue #' + issueNumber);
+              console.log(`Assigned ${isCritical ? 'critical' : 'high priority'} issue #${issueNumber} to maintainers`);
             
-              // Post an urgent notification comment
-              await github.rest.issues.createComment({
-                issue_number: issueNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `🚨 **CRITICAL ISSUE DETECTED** 🚨\n\nThis issue has been marked as critical and auto-assigned to maintainers for immediate attention.\n\ncc: ${maintainers.map(m => `@${m}`).join(' ')}`
-              });
+              // Post notification for critical issues only
+              if (isCritical) {
+                await github.rest.issues.createComment({
+                  issue_number: issueNumber,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: `🚨 **CRITICAL ISSUE AUTO-ASSIGNED** 🚨\n\nThis critical issue has been auto-assigned for immediate attention.\n\ncc: ${criticalMaintainers.map(m => `@${m}`).join(' ')}`
+                });
+              }
             
             } catch (error) {
               console.error('Failed to assign maintainers:', error);
               // Continue execution even if assignment fails
             }
 
-      # Step 8: Final success log
-      - name: Log completion
+      # Step 8: Create project card for tracking (optional)
+      - name: Add to project board
+        if: steps.apply_labels.outputs.is_high_priority == 'true'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Optional: Add high-priority issues to a project board
+            // This requires a project board to be set up
+            console.log('Consider adding issue to project board for tracking');
+            
+            // Uncomment and configure if you have a project board:
+            /*
+            const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
+            
+            await github.rest.projects.createCard({
+              column_id: YOUR_COLUMN_ID, // Replace with your "To Do" column ID
+              content_id: issueNumber,
+              content_type: 'Issue'
+            });
+            */
+
+      # Step 9: Final success log with summary
+      - name: Log completion summary
         run: |
-          echo "✅ Successfully completed enrichment for issue #${{ github.event.inputs.issue_number }}"
-          echo "Labels applied: ${{ steps.apply_labels.outputs.labels }}"
-          echo "Is Critical: ${{ steps.apply_labels.outputs.is_critical }}"
+          echo "✅ Enrichment completed for issue #${{ github.event.inputs.issue_number }}"
+          echo "📊 Summary:"
+          echo "  - Labels: ${{ steps.apply_labels.outputs.labels }}"
+          echo "  - Critical: ${{ steps.apply_labels.outputs.is_critical }}"
+          echo "  - High Priority: ${{ steps.apply_labels.outputs.is_high_priority }}"
+          echo "  - AI Hint Provided: Yes"
+          echo "  - Status: ${{ steps.apply_labels.outputs.success }}"
