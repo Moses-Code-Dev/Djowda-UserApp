@@ -1,7 +1,20 @@
 name: AI Issue Enrichment Gate 2
 on:
-  issues:
-    types: [labeled]
+  # Triggered manually by Gate 1 when an issue is validated
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to enrich'
+        required: true
+        type: string
+      issue_title:
+        description: 'Issue title'
+        required: true
+        type: string
+      issue_body:
+        description: 'Issue body content'
+        required: true
+        type: string
 
 permissions:
   issues: write
@@ -9,11 +22,18 @@ permissions:
   models: read   # Required for GitHub Models
 
 jobs:
+  # Job: Enrich the validated issue with labels and analysis
   enrich:
-    # Only run if the issue was just labeled as 'triaged'
-    if: github.event.label.name == 'triaged'
     runs-on: ubuntu-latest
+
     steps:
+      # Step 1: Log the trigger event for debugging
+      - name: Log enrichment trigger
+        run: |
+          echo "🔍 Starting enrichment for issue #${{ github.event.inputs.issue_number }}"
+          echo "Title: ${{ github.event.inputs.issue_title }}"
+
+      # Step 2: Use AI to analyze and categorize the issue
       - name: Analyze and enrich validated issue
         id: analyze
         uses: actions/ai-inference@v1
@@ -41,8 +61,8 @@ jobs:
             - medium: Minor features broken, occasional errors, moderate inconvenience
             - low: Cosmetic issues, rare edge cases, minor improvements
             
-            Issue Title: ${{ github.event.issue.title }}
-            Issue Body: ${{ github.event.issue.body }}
+            Issue Title: ${{ github.event.inputs.issue_title }}
+            Issue Body: ${{ github.event.inputs.issue_body }}
             
             Output format (JSON only, no other text):
             {
@@ -53,32 +73,37 @@ jobs:
           model: openai/gpt-4o-mini
           temperature: 0.3
 
+      # Step 3: Parse AI response and apply labels to the issue
       - name: Parse AI response and apply labels
         id: apply_labels
         uses: actions/github-script@v7
         with:
           script: |
             try {
+              // Get the issue number from workflow inputs
+              const issueNumber = parseInt('${{ github.event.inputs.issue_number }}');
+            
               // Parse the AI response
               const aiResponse = `${{ steps.analyze.outputs.response }}`;
               console.log('AI Response:', aiResponse);
             
-              // Extract JSON from the response (in case there's extra text)
+              // Extract JSON from the response (handles cases where AI adds extra text)
               const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
               if (!jsonMatch) {
                 throw new Error('No valid JSON found in AI response');
               }
             
               const analysis = JSON.parse(jsonMatch[0]);
+              console.log('Parsed analysis:', analysis);
             
-              // Map friendly names to actual label names
+              // Label mapping: convert AI labels to GitHub label format
               const labelMapping = {
                 // Issue types
                 'bug': '🐞 bug',
                 'feature-request': '✨ feature-request',
                 'improvement': '🛠 improvement',
             
-                // Components
+                // Components (different parts of the app)
                 'catalog': '🛒 catalog',
                 'orders': '📦 orders',
                 'account': '👤 account',
@@ -88,13 +113,13 @@ jobs:
                 'ui-ux': '🎨 ui-ux',
                 'other': '⚙️ other',
             
-                // Severity
+                // Priority/Severity levels
                 'critical': 'priority: critical',
                 'high': 'priority: high',
                 'medium': 'priority: medium',
                 'low': 'priority: low',
             
-                // Additional tags
+                // Additional classification tags
                 'needs-reproduction': 'needs-reproduction',
                 'good-first-issue': 'good-first-issue',
                 'documentation': '📚 documentation',
@@ -102,42 +127,52 @@ jobs:
                 'frontend': 'frontend'
               };
             
-              // Convert AI labels to GitHub labels
+              // Convert AI-suggested labels to GitHub labels
               const labelsToAdd = analysis.labels
                 .map(label => labelMapping[label] || label)
                 .filter(label => label); // Remove any undefined mappings
             
-              // Apply labels
+              // Apply all the labels to the issue
               if (labelsToAdd.length > 0) {
                 await github.rest.issues.addLabels({
-                  issue_number: context.issue.number,
+                  issue_number: issueNumber,
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   labels: labelsToAdd
                 });
-                console.log('Labels added:', labelsToAdd);
+                console.log('Successfully added labels:', labelsToAdd);
               }
             
-              // Store hint for next step
+              // Store outputs for use in next steps
               core.setOutput('hint', analysis.hint || 'Our team will review your issue soon.');
               core.setOutput('labels', labelsToAdd.join(', '));
               core.setOutput('success', 'true');
+              core.setOutput('issue_number', issueNumber.toString());
+            
+              // Check if this is a critical issue
+              const isCritical = labelsToAdd.some(label => label.includes('critical'));
+              core.setOutput('is_critical', isCritical.toString());
             
             } catch (error) {
               console.error('Error processing AI response:', error);
               core.setOutput('success', 'false');
               core.setOutput('hint', 'Our team will review your issue soon and provide assistance.');
               core.setOutput('labels', '');
+              core.setOutput('issue_number', '${{ github.event.inputs.issue_number }}');
+              core.setOutput('is_critical', 'false');
             }
 
+      # Step 4: Post enrichment comment with analysis results
       - name: Comment with analysis and hint
         if: steps.apply_labels.outputs.success == 'true'
         uses: actions/github-script@v7
         with:
           script: |
+            const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
             const hint = `${{ steps.apply_labels.outputs.hint }}`;
             const labels = `${{ steps.apply_labels.outputs.labels }}`;
             
+            // Create a formatted comment with the enrichment results
             const comment = `<p align="center">
               <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="100" />
             </p>
@@ -161,17 +196,22 @@ jobs:
             <sub>This is an automated analysis to help speed up issue resolution. Human review will follow.</sub>`;
             
             await github.rest.issues.createComment({
-              issue_number: context.issue.number,
+              issue_number: issueNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: comment
             });
+            
+            console.log('Posted enrichment comment on issue #' + issueNumber);
 
+      # Step 5: Fallback comment if AI analysis fails
       - name: Fallback comment on analysis failure
         if: steps.apply_labels.outputs.success == 'false'
         uses: actions/github-script@v7
         with:
           script: |
+            const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
+            
             const comment = `<p align="center">
               <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="100" />
             </p>
@@ -189,44 +229,69 @@ jobs:
             <sub>Our team appreciates your contribution to improving the Djowda platform!</sub>`;
             
             await github.rest.issues.createComment({
-              issue_number: context.issue.number,
+              issue_number: issueNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: comment
             });
+            
+            console.log('Posted fallback comment on issue #' + issueNumber);
 
+      # Step 6: Mark the issue as enriched
       - name: Add enriched label
         uses: actions/github-script@v7
         with:
           script: |
-            // Mark that this issue has been enriched
+            const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
+            
+            // Add the 'enriched' label to indicate AI analysis is complete
             await github.rest.issues.addLabels({
-              issue_number: context.issue.number,
+              issue_number: issueNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ['enriched']
             });
+            
+            console.log('Added enriched label to issue #' + issueNumber);
 
+      # Step 7: Auto-assign maintainers for critical issues
       - name: Auto-assign to maintainers for critical issues
-        if: contains(steps.apply_labels.outputs.labels, 'critical')
+        if: steps.apply_labels.outputs.is_critical == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            // Auto-assign critical issues to maintainers
-            // Add your maintainer usernames here
-            const maintainers = ['maintainer1', 'maintainer2']; // Replace with actual usernames
+            const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
             
-            await github.rest.issues.addAssignees({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              assignees: maintainers.slice(0, 2) // GitHub limits to 10 assignees
-            });
+            // TODO: Replace these with your actual maintainer GitHub usernames
+            const maintainers = ['maintainer1', 'maintainer2']; 
             
-            // Add urgent comment for critical issues
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🚨 **CRITICAL ISSUE DETECTED** 🚨\n\nThis issue has been marked as critical and auto-assigned to maintainers for immediate attention.\n\ncc: ${maintainers.map(m => `@${m}`).join(' ')}`
-            });
+            try {
+              // Assign critical issues to maintainers
+              await github.rest.issues.addAssignees({
+                issue_number: issueNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                assignees: maintainers.slice(0, 2) // GitHub limits to 10 assignees, we take first 2
+              });
+            
+              console.log('Assigned maintainers to critical issue #' + issueNumber);
+            
+              // Post an urgent notification comment
+              await github.rest.issues.createComment({
+                issue_number: issueNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🚨 **CRITICAL ISSUE DETECTED** 🚨\n\nThis issue has been marked as critical and auto-assigned to maintainers for immediate attention.\n\ncc: ${maintainers.map(m => `@${m}`).join(' ')}`
+              });
+            
+            } catch (error) {
+              console.error('Failed to assign maintainers:', error);
+              // Continue execution even if assignment fails
+            }
+
+      # Step 8: Final success log
+      - name: Log completion
+        run: |
+          echo "✅ Successfully completed enrichment for issue #${{ github.event.inputs.issue_number }}"
+          echo "Labels applied: ${{ steps.apply_labels.outputs.labels }}"
+          echo "Is Critical: ${{ steps.apply_labels.outputs.is_critical }}"

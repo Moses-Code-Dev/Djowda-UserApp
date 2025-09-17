@@ -7,11 +7,15 @@ permissions:
   issues: write
   contents: read
   models: read   # Required for GitHub Models
+  actions: write  # Required to trigger other workflows
 
 jobs:
+  # Job: Triage the issue to determine if it's legitimate
   triage:
     runs-on: ubuntu-latest
+
     steps:
+      # Step 1: Use AI to classify the issue as legit or not_legit
       - name: Use GitHub Models to classify issue
         id: classify
         uses: actions/ai-inference@v1
@@ -42,12 +46,14 @@ jobs:
           model: openai/gpt-4o-mini
           temperature: 0.2
 
+      # Step 2: Process legitimate issues
       - name: Comment for legit issue
         if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.createComment({
+            // Post initial validation comment
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -57,33 +63,76 @@ jobs:
 
             👋 Hi @${{ github.event.issue.user.login }}!  
             Thanks for your contribution to the Djowda platform! 🎉  
-            Your issue has been marked as **valid**. The team will take a look soon. 🚀`
+            Your issue has been marked as **valid**. Analyzing for enrichment... 🔍`
             })
 
+      # Step 3: Add triaged label for legitimate issues
       - name: Add label as triaged
         if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.addLabels({
+            // Add the 'triaged' label to mark this issue as validated
+            await github.rest.issues.addLabels({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ['triaged']
             })
-            github.rest.issues.removeLabel({
+            
+            // Remove 'needs-info' label if it exists
+            await github.rest.issues.removeLabel({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               name: 'needs-info'
-            }).catch(() => {})
+            }).catch(() => {
+              console.log('needs-info label not found, skipping removal')
+            })
 
+      # Step 4: Trigger Gate 2 workflow for legitimate issues
+      - name: Trigger Gate 2 Enrichment Workflow
+        if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Trigger the Gate 2 workflow using workflow_dispatch
+            // This ensures Gate 2 runs immediately after Gate 1 validates the issue
+            try {
+              const result = await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'ai-issue-enrichment-gate2.yml', // Gate 2 workflow filename
+                ref: 'main', // or your default branch name
+                inputs: {
+                  issue_number: context.issue.number.toString(),
+                  issue_title: context.issue.title,
+                  issue_body: context.issue.body
+                }
+              });
+            
+              console.log('Successfully triggered Gate 2 workflow for issue #' + context.issue.number);
+            } catch (error) {
+              console.error('Failed to trigger Gate 2 workflow:', error);
+            
+              // Fallback: Add a comment if Gate 2 trigger fails
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `⚠️ Automatic enrichment couldn't be triggered. A maintainer will review and label this issue manually.`
+              })
+            }
+
+      # Step 5: Handle non-legitimate issues
       - name: Comment for not legit issue
         if: contains(steps.classify.outputs.response, 'not_legit')
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.createComment({
+            // Post a comment requesting more information for incomplete issues
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -96,43 +145,52 @@ jobs:
 
             Please ensure your issue includes:
 
-            ✅ Issue Type - Select Bug Report, Feature Request, or Improvement  
-            ✅ Clear Description - Explain the problem or idea in detail  
-            ✅ Related Component - Choose which part of the app (🛒 Catalog, 📦 Orders, 👤 Account, etc.)
+            ✅ **Issue Type** - Select Bug Report, Feature Request, or Improvement  
+            ✅ **Clear Description** - Explain the problem or idea in detail  
+            ✅ **Related Component** - Choose which part of the app (🛒 Catalog, 📦 Orders, 👤 Account, etc.)
 
             For Bug Reports, also include:  
-            🔍 Steps to Reproduce - How can we recreate the issue?  
-            📋 Expected vs Actual Behavior - What should happen vs what actually happens?  
-            📱 Device Info - Your device model and Android/iOS version
+            🔍 **Steps to Reproduce** - How can we recreate the issue?  
+            📋 **Expected vs Actual Behavior** - What should happen vs what actually happens?  
+            📱 **Device Info** - Your device model and Android/iOS version
 
             Please update your issue using our template and we'll review it promptly! 🚀`
             })
 
+      # Step 6: Add needs-info label for non-legitimate issues
       - name: Add label as needs-info
         if: contains(steps.classify.outputs.response, 'not_legit')
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.addLabels({
+            // Add 'needs-info' label to track incomplete issues
+            await github.rest.issues.addLabels({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ['needs-info']
             })
-            github.rest.issues.removeLabel({
+            
+            // Remove 'triaged' label if it exists
+            await github.rest.issues.removeLabel({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               name: 'triaged'
-            }).catch(() => {})
+            }).catch(() => {
+              console.log('triaged label not found, skipping removal')
+            })
 
+      # Step 7: Handle AI classification errors
       - name: Handle classification errors
         if: ${{ !contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit') }}
         uses: actions/github-script@v7
         with:
           script: |
+            // Log the error and post a fallback comment
             console.log('AI classification failed or returned unexpected result:', '${{ steps.classify.outputs.response }}')
-            github.rest.issues.createComment({
+            
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,

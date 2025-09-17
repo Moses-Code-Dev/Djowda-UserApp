@@ -1,19 +1,23 @@
 #!/usr/bin/env sh
 
 #
-# Copyright 2015 the original author or authors.
+# Created by the Djowda Project Team
+# Copyright (c) 2017-2025 Djowda. All rights reserved.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# This file is part of the Djowda Project.
 #
-#      https://www.apache.org/licenses/LICENSE-2.0
+# Licensed under the Djowda Non-Commercial, Non-Profit License v1.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Permissions:
+# - You may use, modify, and share this file for non-commercial and non-profit purposes only.
+# - Commercial use of this file, in any form, requires prior written permission
+#   from the Djowda Project maintainers.
+#
+# Notes:
+# - This project is community-driven and continuously evolving.
+# - The Djowda Project reserves the right to relicense future versions.
+#
+# Last Modified: 2025-09-04 23:18
 #
 
 ##############################################################################

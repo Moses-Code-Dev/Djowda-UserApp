@@ -1,3 +1,23 @@
+<!--
+  ~ Created by the Djowda Project Team
+  ~ Copyright (c) 2017-2025 Djowda. All rights reserved.
+  ~
+  ~ This file is part of the Djowda Project.
+  ~
+  ~ Licensed under the Djowda Non-Commercial, Non-Profit License v1.0
+  ~
+  ~ Permissions:
+  ~ - You may use, modify, and share this file for non-commercial and non-profit purposes only.
+  ~ - Commercial use of this file, in any form, requires prior written permission
+  ~   from the Djowda Project maintainers.
+  ~
+  ~ Notes:
+  ~ - This project is community-driven and continuously evolving.
+  ~ - The Djowda Project reserves the right to relicense future versions.
+  ~
+  ~ Last Modified: 2025-09-08 23:47
+  -->
+
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:autoMirrored="true" android:height="24dp" android:tint="#000000" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp">
       
     <path android:fillColor="@android:color/white" android:pathData="M19,3h-4.18C14.4,1.84 13.3,1 12,1c-1.3,0 -2.4,0.84 -2.82,2L5,3c-1.1,0 -2,0.9 -2,2v14c0,1.1 0.9,2 2,2h14c1.1,0 2,-0.9 2,-2L21,5c0,-1.1 -0.9,-2 -2,-2zM12,3c0.55,0 1,0.45 1,1s-0.45,1 -1,1 -1,-0.45 -1,-1 0.45,-1 1,-1zM14,17L7,17v-2h7v2zM17,13L7,13v-2h10v2zM17,9L7,9L7,7h10v2z"/>
