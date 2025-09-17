@@ -1,217 +1,297 @@
-name: AI Issue Triage Gate 1
+name: AI Issue Enrichment Gate 2
 on:
-  issues:
-    types: [opened, edited]
+  # Triggered manually by Gate 1 when an issue is validated
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to enrich'
+        required: true
+        type: string
+      issue_title:
+        description: 'Issue title'
+        required: true
+        type: string
+      issue_body:
+        description: 'Issue body content'
+        required: true
+        type: string
 
 permissions:
   issues: write
   contents: read
   models: read   # Required for GitHub Models
-  actions: write  # Required to trigger other workflows
 
 jobs:
-  # Job: Triage the issue to determine if it's legitimate
-  triage:
+  # Job: Enrich the validated issue with labels and analysis
+  enrich:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Use AI to classify the issue as legit or not_legit
-      - name: Use GitHub Models to classify issue
-        id: classify
+      # Step 1: Log the trigger event for debugging
+      - name: Log enrichment trigger
+        run: |
+          echo "🔍 Starting enrichment for issue #${{ github.event.inputs.issue_number }}"
+          echo "Title: ${{ github.event.inputs.issue_title }}"
+
+      # Step 2: Use AI to analyze and categorize the issue
+      - name: Analyze and enrich validated issue
+        id: analyze
         uses: actions/ai-inference@v1
         with:
           prompt: |
-            You are triaging issues for the Djowda User App platform. Analyze this issue against our template requirements:
+            You are an assistant helping maintainers of the Djowda User App platform by enriching validated issues.
+            These issues have already passed Gate 1 (legit triage), so they contain enough detail to analyze.
             
-            REQUIRED for "legit" classification:
-            - Issue Type must be selected (🐞 Bug Report, ✨ Feature Request, or 🛠 Improvement)
-            - Description must be clear and meaningful (not just "doesn't work" or similar)
-            - Related Component must be specified (🛒 Catalog, 📦 Orders, 👤 Account, 🔔 Notifications, ⚙️ Other)
+            Your task:
+            1. **Assign Context Labels** based on the issue content:
+               - Issue Type → bug, feature-request, improvement
+               - Component → catalog, orders, account, notifications, payments, performance, ui-ux, other
+               - Severity → critical, high, medium, low (based on urgency/impact)
+               - Optional tags → needs-reproduction, good-first-issue, documentation, backend, frontend
             
-            For BUG REPORTS specifically, also check:
-            - If it's a bug, Steps to Reproduce should be provided
-            - Expected vs Actual Behavior should be described
+            2. **Suggest a Short Possible Fix/Hint**:
+               - Provide a 1-3 sentence actionable suggestion or diagnostic step
+               - Be concrete but lightweight (think "first-aid tip")
+               - Focus on immediate troubleshooting or workarounds users can try
+               - For features, suggest temporary alternatives if available
             
-            SPAM indicators (mark as "not_legit"):
-            - Generic/templated text unrelated to Djowda app
-            - Promotional content or links
-            - Nonsensical or AI-generated content
-            - Empty or minimal descriptions like "fix this" or "doesn't work"
+            Severity Guidelines:
+            - critical: App crashes, data loss, payment issues, security vulnerabilities
+            - high: Major features broken, frequent errors, significant UX problems
+            - medium: Minor features broken, occasional errors, moderate inconvenience
+            - low: Cosmetic issues, rare edge cases, minor improvements
             
-            Issue Title: ${{ github.event.issue.title }}
-            Issue Body: ${{ github.event.issue.body }}
+            Issue Title: ${{ github.event.inputs.issue_title }}
+            Issue Body: ${{ github.event.inputs.issue_body }}
             
-            Analyze the completeness and legitimacy. Respond with exactly one word: legit or not_legit
-          system-prompt: You are a helpful assistant that triages GitHub issues for the Djowda User App. Focus on ensuring issues follow the template structure and provide sufficient detail for developers to act on.
+            Output format (JSON only, no other text):
+            {
+              "labels": ["bug", "catalog", "high"],
+              "hint": "Check if the product list API returns valid data; a 404 usually indicates wrong catalog ID."
+            }
+          system-prompt: You are a technical assistant for the Djowda e-commerce mobile app. Analyze issues precisely and provide practical, actionable hints. Be specific to mobile app development (React Native/Flutter) and e-commerce contexts.
           model: openai/gpt-4o-mini
-          temperature: 0.2
+          temperature: 0.3
 
-      # Step 2: Process legitimate issues
-      - name: Comment for legit issue
-        if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
+      # Step 3: Parse AI response and apply labels to the issue
+      - name: Parse AI response and apply labels
+        id: apply_labels
         uses: actions/github-script@v7
         with:
           script: |
-            // Post initial validation comment
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `<p align="center">
-              <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="120" />
-            </p>
-
-            👋 Hi @${{ github.event.issue.user.login }}!  
-            Thanks for your contribution to the Djowda platform! 🎉  
-            Your issue has been marked as **valid**. Analyzing for enrichment... 🔍`
-            })
-
-      # Step 3: Add triaged label for legitimate issues
-      - name: Add label as triaged
-        if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
-        uses: actions/github-script@v7
-        with:
-          script: |
-            // Add the 'triaged' label to mark this issue as validated
-            await github.rest.issues.addLabels({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: ['triaged']
-            })
-            
-            // Remove 'needs-info' label if it exists
-            await github.rest.issues.removeLabel({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: 'needs-info'
-            }).catch(() => {
-              console.log('needs-info label not found, skipping removal')
-            })
-
-      # Step 4: Trigger Gate 2 workflow for legitimate issues
-      - name: Trigger Gate 2 Enrichment Workflow
-        if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            // Trigger the Gate 2 workflow using workflow_dispatch
             try {
-              // Get issue number from context
-              const issueNumber = context.issue.number.toString();
+              // Get the issue number from workflow inputs
+              const issueNumber = parseInt('${{ github.event.inputs.issue_number }}');
             
-              // Get the issue details using the GitHub API
-              const { data: issue } = await github.rest.issues.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number
-              });
+              // Parse the AI response
+              const aiResponse = `${{ steps.analyze.outputs.response }}`;
+              console.log('AI Response:', aiResponse);
             
-              console.log('Triggering Gate 2 for issue #' + issueNumber);
-              console.log('Issue Title:', issue.title);
+              // Extract JSON from the response (handles cases where AI adds extra text)
+              const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+              if (!jsonMatch) {
+                throw new Error('No valid JSON found in AI response');
+              }
             
-              // Trigger the workflow with the issue details
-              const result = await github.rest.actions.createWorkflowDispatch({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: 'ai-issue-enrichment-gate2.yml',
-                ref: 'main',
-                inputs: {
+              const analysis = JSON.parse(jsonMatch[0]);
+              console.log('Parsed analysis:', analysis);
+            
+              // Label mapping: convert AI labels to GitHub label format
+              const labelMapping = {
+                // Issue types
+                'bug': '🐞 bug',
+                'feature-request': '✨ feature-request',
+                'improvement': '🛠 improvement',
+            
+                // Components (different parts of the app)
+                'catalog': '🛒 catalog',
+                'orders': '📦 orders',
+                'account': '👤 account',
+                'notifications': '🔔 notifications',
+                'payments': '💳 payments',
+                'performance': '⚡ performance',
+                'ui-ux': '🎨 ui-ux',
+                'other': '⚙️ other',
+            
+                // Priority/Severity levels
+                'critical': 'priority: critical',
+                'high': 'priority: high',
+                'medium': 'priority: medium',
+                'low': 'priority: low',
+            
+                // Additional classification tags
+                'needs-reproduction': 'needs-reproduction',
+                'good-first-issue': 'good-first-issue',
+                'documentation': '📚 documentation',
+                'backend': 'backend',
+                'frontend': 'frontend'
+              };
+            
+              // Convert AI-suggested labels to GitHub labels
+              const labelsToAdd = analysis.labels
+                .map(label => labelMapping[label] || label)
+                .filter(label => label); // Remove any undefined mappings
+            
+              // Apply all the labels to the issue
+              if (labelsToAdd.length > 0) {
+                await github.rest.issues.addLabels({
                   issue_number: issueNumber,
-                  issue_title: issue.title,
-                  issue_body: issue.body
-                }
-              });
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  labels: labelsToAdd
+                });
+                console.log('Successfully added labels:', labelsToAdd);
+              }
             
-              console.log('Successfully triggered Gate 2 workflow for issue #' + issueNumber);
+              // Store outputs for use in next steps
+              core.setOutput('hint', analysis.hint || 'Our team will review your issue soon.');
+              core.setOutput('labels', labelsToAdd.join(', '));
+              core.setOutput('success', 'true');
+              core.setOutput('issue_number', issueNumber.toString());
+            
+              // Check if this is a critical issue
+              const isCritical = labelsToAdd.some(label => label.includes('critical'));
+              core.setOutput('is_critical', isCritical.toString());
+            
             } catch (error) {
-              console.error('Failed to trigger Gate 2 workflow:', error);
-              console.error('Error details:', error.message);
-            
-              // Fallback: Add a comment if Gate 2 trigger fails
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `⚠️ Automatic enrichment couldn't be triggered. A maintainer will review and label this issue manually.`
-              })
+              console.error('Error processing AI response:', error);
+              core.setOutput('success', 'false');
+              core.setOutput('hint', 'Our team will review your issue soon and provide assistance.');
+              core.setOutput('labels', '');
+              core.setOutput('issue_number', '${{ github.event.inputs.issue_number }}');
+              core.setOutput('is_critical', 'false');
             }
 
-      # Step 5: Handle non-legitimate issues
-      - name: Comment for not legit issue
-        if: contains(steps.classify.outputs.response, 'not_legit')
+      # Step 4: Post enrichment comment with analysis results
+      - name: Comment with analysis and hint
+        if: steps.apply_labels.outputs.success == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            // Post a comment requesting more information for incomplete issues
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `<p align="center">
-              <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="120" />
+            const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
+            const hint = `${{ steps.apply_labels.outputs.hint }}`;
+            const labels = `${{ steps.apply_labels.outputs.labels }}`;
+            
+            // Create a formatted comment with the enrichment results
+            const comment = `<p align="center">
+              <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="100" />
             </p>
 
-            ⚠️ Hi @${{ github.event.issue.user.login }}!  
-            Thanks for opening an issue! It looks like some important details may be missing or incomplete.
+            ## 🤖 AI Analysis Complete
 
-            Please ensure your issue includes:
+            Thank you for your detailed issue report! I've analyzed it and added relevant labels to help our maintainers prioritize and address it effectively.
 
-            ✅ **Issue Type** - Select Bug Report, Feature Request, or Improvement  
-            ✅ **Clear Description** - Explain the problem or idea in detail  
-            ✅ **Related Component** - Choose which part of the app (🛒 Catalog, 📦 Orders, 👤 Account, etc.)
+            ### 📌 Applied Labels
+            ${labels.split(', ').map(label => `\`${label}\``).join(' ')}
 
-            For Bug Reports, also include:  
-            🔍 **Steps to Reproduce** - How can we recreate the issue?  
-            📋 **Expected vs Actual Behavior** - What should happen vs what actually happens?  
-            📱 **Device Info** - Your device model and Android/iOS version
+            ### 💡 Quick Tip While You Wait
+            ${hint}
 
-            Please update your issue using our template and we'll review it promptly! 🚀`
-            })
+            ### 📝 What's Next?
+            - A maintainer will review your issue based on its priority
+            - You may be asked for additional details if needed
+            - Feel free to add more context or updates as comments
 
-      # Step 6: Add needs-info label for non-legitimate issues
-      - name: Add label as needs-info
-        if: contains(steps.classify.outputs.response, 'not_legit')
+            ---
+            <sub>This is an automated analysis to help speed up issue resolution. Human review will follow.</sub>`;
+            
+            await github.rest.issues.createComment({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+            
+            console.log('Posted enrichment comment on issue #' + issueNumber);
+
+      # Step 5: Fallback comment if AI analysis fails
+      - name: Fallback comment on analysis failure
+        if: steps.apply_labels.outputs.success == 'false'
         uses: actions/github-script@v7
         with:
           script: |
-            // Add 'needs-info' label to track incomplete issues
+            const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
+            
+            const comment = `<p align="center">
+              <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="100" />
+            </p>
+
+            ## ✅ Issue Validated
+
+            Thank you for your issue report! While our AI assistant couldn't automatically categorize this issue, it has been marked as valid and will be reviewed by our maintainers soon.
+
+            ### 📝 What's Next?
+            - A maintainer will manually review and label your issue
+            - You may be asked for additional details if needed
+            - Feel free to add more context or updates as comments
+
+            ---
+            <sub>Our team appreciates your contribution to improving the Djowda platform!</sub>`;
+            
+            await github.rest.issues.createComment({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+            
+            console.log('Posted fallback comment on issue #' + issueNumber);
+
+      # Step 6: Mark the issue as enriched
+      - name: Add enriched label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
+            
+            // Add the 'enriched' label to indicate AI analysis is complete
             await github.rest.issues.addLabels({
-              issue_number: context.issue.number,
+              issue_number: issueNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: ['needs-info']
-            })
+              labels: ['enriched']
+            });
             
-            // Remove 'triaged' label if it exists
-            await github.rest.issues.removeLabel({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: 'triaged'
-            }).catch(() => {
-              console.log('triaged label not found, skipping removal')
-            })
+            console.log('Added enriched label to issue #' + issueNumber);
 
-      # Step 7: Handle AI classification errors
-      - name: Handle classification errors
-        if: ${{ !contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit') }}
+      # Step 7: Auto-assign maintainers for critical issues
+      - name: Auto-assign to maintainers for critical issues
+        if: steps.apply_labels.outputs.is_critical == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            // Log the error and post a fallback comment
-            console.log('AI classification failed or returned unexpected result:', '${{ steps.classify.outputs.response }}')
+            const issueNumber = parseInt('${{ steps.apply_labels.outputs.issue_number }}');
             
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `<p align="center">
-              <img src="https://raw.githubusercontent.com/Moses-Code-Dev/Djowda-UserApp/main/.github/assets/djowda-logo.png" width="120" />
-            </p>
+            // TODO: Replace these with your actual maintainer GitHub usernames
+            const maintainers = ['maintainer1', 'maintainer2']; 
+            
+            try {
+              // Assign critical issues to maintainers
+              await github.rest.issues.addAssignees({
+                issue_number: issueNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                assignees: maintainers.slice(0, 2) // GitHub limits to 10 assignees, we take first 2
+              });
+            
+              console.log('Assigned maintainers to critical issue #' + issueNumber);
+            
+              // Post an urgent notification comment
+              await github.rest.issues.createComment({
+                issue_number: issueNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🚨 **CRITICAL ISSUE DETECTED** 🚨\n\nThis issue has been marked as critical and auto-assigned to maintainers for immediate attention.\n\ncc: ${maintainers.map(m => `@${m}`).join(' ')}`
+              });
+            
+            } catch (error) {
+              console.error('Failed to assign maintainers:', error);
+              // Continue execution even if assignment fails
+            }
 
-            🤖 Hi @${{ github.event.issue.user.login }}!  
-            Our AI triage is temporarily unavailable. A maintainer will review this issue manually. Thank you for your patience! 🙏`
-            })
+      # Step 8: Final success log
+      - name: Log completion
+        run: |
+          echo "✅ Successfully completed enrichment for issue #${{ github.event.inputs.issue_number }}"
+          echo "Labels applied: ${{ steps.apply_labels.outputs.labels }}"
+          echo "Is Critical: ${{ steps.apply_labels.outputs.is_critical }}"

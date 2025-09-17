@@ -90,24 +90,7 @@ jobs:
               console.log('needs-info label not found, skipping removal')
             })
 
-      # Step 4: Trigger Gate 2 workflow for legitimate issues (ROBUST VERSION)
-      - name: Prepare issue data
-        if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
-        id: prepare_data
-        run: |
-          # Escape and prepare issue data for workflow dispatch
-          ISSUE_TITLE="${{ github.event.issue.title }}"
-          ISSUE_BODY="${{ github.event.issue.body }}"
-          
-          # Escape special characters for JSON
-          ISSUE_TITLE_ESCAPED=$(echo "$ISSUE_TITLE" | jq -Rs .)
-          ISSUE_BODY_ESCAPED=$(echo "$ISSUE_BODY" | jq -Rs .)
-          
-          # Set outputs
-          echo "issue_title=$ISSUE_TITLE_ESCAPED" >> $GITHUB_OUTPUT
-          echo "issue_body=$ISSUE_BODY_ESCAPED" >> $GITHUB_OUTPUT
-          echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
-
+      # Step 4: Trigger Gate 2 workflow for legitimate issues
       - name: Trigger Gate 2 Enrichment Workflow
         if: contains(steps.classify.outputs.response, 'legit') && !contains(steps.classify.outputs.response, 'not_legit')
         uses: actions/github-script@v7
@@ -116,12 +99,20 @@ jobs:
           script: |
             // Trigger the Gate 2 workflow using workflow_dispatch
             try {
-              const issueNumber = '${{ steps.prepare_data.outputs.issue_number }}';
-              const issueTitle = JSON.parse(${{ steps.prepare_data.outputs.issue_title }});
-              const issueBody = JSON.parse(${{ steps.prepare_data.outputs.issue_body }});
+              // Get issue number from context
+              const issueNumber = context.issue.number.toString();
+            
+              // Get the issue details using the GitHub API
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number
+              });
             
               console.log('Triggering Gate 2 for issue #' + issueNumber);
+              console.log('Issue Title:', issue.title);
             
+              // Trigger the workflow with the issue details
               const result = await github.rest.actions.createWorkflowDispatch({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -129,15 +120,17 @@ jobs:
                 ref: 'main',
                 inputs: {
                   issue_number: issueNumber,
-                  issue_title: issueTitle,
-                  issue_body: issueBody
+                  issue_title: issue.title,
+                  issue_body: issue.body
                 }
               });
             
               console.log('Successfully triggered Gate 2 workflow for issue #' + issueNumber);
             } catch (error) {
               console.error('Failed to trigger Gate 2 workflow:', error);
+              console.error('Error details:', error.message);
             
+              // Fallback: Add a comment if Gate 2 trigger fails
               await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
