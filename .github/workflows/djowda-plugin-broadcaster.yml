@@ -27,11 +27,10 @@ jobs:
           git config --global user.name "Djowda Broadcaster Bot"
           git config --global user.email "djowda-bot@users.noreply.github.com"
 
-      - name: Sync DjowdaMap module to all other components
+      - name: Sync DjowdaMap module and create PRs
         env:
           GITHUB_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
         run: |
-          # Loop over each repo in repos.txt
           while read repo; do
             [ -z "$repo" ] && continue
             echo "🔁 Syncing DjowdaMap to $repo ..."
@@ -39,21 +38,32 @@ jobs:
             repo_name=$(basename "$repo" .git)
             branch_name="djowda-sync/DjowdaMap-$(date +%s)"
 
-            # Clone target repo
             git clone "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@${repo#https://}" $repo_name
             cd $repo_name
 
-            # Create new branch
             git checkout -b "$branch_name"
 
-            # Copy updated module from source
-            rsync -av --delete ../DjowdaMap ./DjowdaMap
+            mkdir -p ./DjowdaMap
+            rsync -av --delete ../DjowdaMap/ ./DjowdaMap/
 
-            # Commit & push
             git add .
+            if git diff --cached --quiet; then
+              echo "⚪ No changes detected for $repo_name, skipping..."
+              cd ..
+              continue
+            fi
+
             git commit -m "Djowda Broadcaster: Sync latest DjowdaMap module"
             git push origin "$branch_name"
 
-            echo "✅ Pushed update branch $branch_name to $repo_name"
+            # ✅ Create Pull Request using GitHub CLI
+            gh auth login --with-token <<< "$GITHUB_TOKEN"
+            gh pr create \
+              --base main \
+              --head "$branch_name" \
+              --title "DjowdaMap module update" \
+              --body "This PR was automatically created by the Djowda Broadcaster workflow to sync the latest DjowdaMap module."
+
+            echo "✅ Pull request created for $repo_name"
             cd ..
           done < repos.txt
