@@ -7,85 +7,83 @@ on:
     paths:
       - "DjowdaMap/**"
 
-jobs:
-  broadcast:
-    runs-on: ubuntu-latest
+steps:
+  - name: Checkout source repo
+    uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout source repo
-        uses: actions/checkout@v4
+  - name: Read target repos list
+    id: read_repos
+    run: |
+      echo "repos<<EOF" >> $GITHUB_OUTPUT
+      cat repos.txt >> $GITHUB_OUTPUT
+      echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Read target repos list
-        id: read_repos
-        run: |
-          echo "repos<<EOF" >> $GITHUB_OUTPUT
-          cat repos.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+  - name: Setup Git identity
+    run: |
+      git config --global user.name "Djowda Broadcaster Bot"
+      git config --global user.email "djowda-bot@users.noreply.github.com"
 
-      - name: Setup Git identity
-        run: |
-          git config --global user.name "Djowda Broadcaster Bot"
-          git config --global user.email "djowda-bot@users.noreply.github.com"
+  - name: Authenticate gh CLI and configure git
+    env:
+      SYNC_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
+    run: |
+      set -euo pipefail
+      # Ensure gh can store credentials by removing the automatically injected GITHUB_TOKEN
+      unset GITHUB_TOKEN || true
 
-      - name: Authenticate gh CLI and configure git
-        env:
-          SYNC_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
-        run: |
-          set -euo pipefail
-          unset GITHUB_TOKEN || true
+      if ! command -v gh >/dev/null 2>&1; then
+        echo "gh not found, installing..."
+        sudo apt-get update -y
+        sudo apt-get install -y gh
+      fi
 
-          if ! command -v gh >/dev/null 2>&1; then
-            echo "gh not found, installing..."
-            sudo apt-get update -y
-            sudo apt-get install -y gh
-          fi
+      echo "Authenticating gh CLI..."
+      echo "$SYNC_TOKEN" | gh auth login --with-token
+      # NOTE: removed `gh auth status` because it can require the read:org scope and fail the job
 
-          echo "$SYNC_TOKEN" | gh auth login --with-token
-          gh auth status
+  - name: Sync DjowdaMap module and create PRs
+    env:
+      SYNC_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
+    run: |
+      set -euo pipefail
 
-      - name: Sync DjowdaMap module and create PRs
-        env:
-          SYNC_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
-        run: |
-          set -euo pipefail
+      while IFS= read -r repo || [ -n "$repo" ]; do
+        [ -z "$repo" ] && continue
+        echo "🔁 Syncing DjowdaMap to $repo ..."
 
-          while IFS= read -r repo || [ -n "$repo" ]; do
-            [ -z "$repo" ] && continue
-            echo "🔁 Syncing DjowdaMap to $repo ..."
+        # Normalize repo path (owner/repo), remove protocol and .git suffix
+        repo_path="${repo#https://github.com/}"
+        repo_path="${repo_path%.git}"
 
-            # Normalize repo path (owner/repo), remove protocol and .git suffix
-            repo_path="${repo#https://github.com/}"
-            repo_path="${repo_path%.git}"
+        repo_name=$(basename "$repo_path")
+        branch_name="djowda-sync/DjowdaMap-$(date +%s)"
 
-            repo_name=$(basename "$repo_path")
-            branch_name="djowda-sync/DjowdaMap-$(date +%s)"
+        # Use gh to clone so authentication is handled by gh
+        gh repo clone "$repo_path" "$repo_name"
+        cd "$repo_name"
+        git checkout -b "$branch_name"
 
-            # Use gh to clone so authentication is handled by gh
-            gh repo clone "$repo_path" "$repo_name"
-            cd "$repo_name"
-            git checkout -b "$branch_name"
+        mkdir -p ./DjowdaMap
+        rsync -av --delete ../DjowdaMap/ ./DjowdaMap/
 
-            mkdir -p ./DjowdaMap
-            rsync -av --delete ../DjowdaMap/ ./DjowdaMap/
+        git add .
+        if git diff --cached --quiet; then
+          echo "⚪ No changes detected for $repo_name, skipping..."
+          cd ..
+          continue
+        fi
 
-            git add .
-            if git diff --cached --quiet; then
-              echo "⚪ No changes detected for $repo_name, skipping..."
-              cd ..
-              continue
-            fi
+        git commit -m "Djowda Broadcaster: Sync latest DjowdaMap module"
+        git push -u origin "$branch_name"
 
-            git commit -m "Djowda Broadcaster: Sync latest DjowdaMap module"
-            git push -u origin "$branch_name"
+        # Create PR using gh (we already authenticated)
+        gh pr create \
+          --repo "$repo_path" \
+          --base main \
+          --head "$branch_name" \
+          --title "DjowdaMap module update" \
+          --body "This PR was automatically created by the Djowda Broadcaster workflow to sync the latest DjowdaMap module."
 
-            # Create PR using gh (we already authenticated)
-            gh pr create \
-              --repo "$repo_path" \
-              --base main \
-              --head "$branch_name" \
-              --title "DjowdaMap module update" \
-              --body "This PR was automatically created by the Djowda Broadcaster workflow to sync the latest DjowdaMap module."
-
-            echo "✅ Pull request created for $repo_name"
-            cd ..
-          done < repos.txt
+        echo "✅ Pull request created for $repo_name"
+        cd ..
+      done < repos.txt
