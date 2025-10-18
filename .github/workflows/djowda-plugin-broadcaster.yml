@@ -27,21 +27,20 @@ jobs:
           git config --global user.name "Djowda Broadcaster Bot"
           git config --global user.email "djowda-bot@users.noreply.github.com"
 
-      - name: Authenticate gh CLI and configure git
+      - name: Configure direct GitHub authentication
         env:
           SYNC_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
         run: |
           set -euo pipefail
-          unset GITHUB_TOKEN || true
+          # Use token for all git/https operations
+          git config --global url."https://${SYNC_TOKEN}@github.com/".insteadOf "https://github.com/"
 
+      - name: Install GitHub CLI
+        run: |
           if ! command -v gh >/dev/null 2>&1; then
-            echo "gh not found, installing..."
             sudo apt-get update -y
             sudo apt-get install -y gh
           fi
-
-          echo "$SYNC_TOKEN" | gh auth login --with-token
-          gh auth status
 
       - name: Sync DjowdaMap module and create PRs
         env:
@@ -53,15 +52,15 @@ jobs:
             [ -z "$repo" ] && continue
             echo "🔁 Syncing DjowdaMap to $repo ..."
 
-            # Normalize repo path (owner/repo), remove protocol and .git suffix
+            # Normalize repo path (owner/repo)
             repo_path="${repo#https://github.com/}"
             repo_path="${repo_path%.git}"
 
             repo_name=$(basename "$repo_path")
             branch_name="djowda-sync/DjowdaMap-$(date +%s)"
 
-            # Use gh to clone so authentication is handled by gh
-            gh repo clone "$repo_path" "$repo_name"
+            # Clone using git directly (token handled by config)
+            git clone "https://github.com/${repo_path}.git" "$repo_name"
             cd "$repo_name"
             git checkout -b "$branch_name"
 
@@ -78,13 +77,14 @@ jobs:
             git commit -m "Djowda Broadcaster: Sync latest DjowdaMap module"
             git push -u origin "$branch_name"
 
-            # Create PR using gh (we already authenticated)
+            # Create PR without gh login (token passed via env)
             gh pr create \
               --repo "$repo_path" \
               --base main \
               --head "$branch_name" \
               --title "DjowdaMap module update" \
-              --body "This PR was automatically created by the Djowda Broadcaster workflow to sync the latest DjowdaMap module."
+              --body "This PR was automatically created by the Djowda Broadcaster workflow to sync the latest DjowdaMap module." \
+              --repo-owner "${repo_path%%/*}"
 
             echo "✅ Pull request created for $repo_name"
             cd ..
