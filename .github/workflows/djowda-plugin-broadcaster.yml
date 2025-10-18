@@ -40,7 +40,6 @@ jobs:
 
             git clone "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@${repo#https://}" $repo_name
             cd $repo_name
-
             git checkout -b "$branch_name"
 
             mkdir -p ./DjowdaMap
@@ -56,14 +55,16 @@ jobs:
             git commit -m "Djowda Broadcaster: Sync latest DjowdaMap module"
             git push origin "$branch_name"
 
-            # ✅ Create Pull Request using GitHub CLI
-            gh auth login --with-token <<< "$GITHUB_TOKEN"
+            # ✅ Create PR directly with token and explicit repo
             gh pr create \
+              --repo "Moses-Code-Dev/$repo_name" \
               --base main \
               --head "$branch_name" \
               --title "DjowdaMap module update" \
-              --body "This PR was automatically created by the Djowda Broadcaster workflow to sync the latest DjowdaMap module."
+              --body "This PR was automatically created by the Djowda Broadcaster workflow to sync the latest DjowdaMap module." \
+              --token "$GITHUB_TOKEN"
 
             echo "✅ Pull request created for $repo_name"
             cd ..
           done < repos.txt
+      
