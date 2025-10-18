@@ -85,4 +85,5 @@ firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging
 android-application = { id = "com.android.application", version.ref = "agp" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServicesVersion" }
 google-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "googleFirebaseCrashlyticsVersion" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 
