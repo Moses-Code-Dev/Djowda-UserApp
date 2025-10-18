@@ -1,0 +1,59 @@
+name: Djowda Plugin Broadcaster
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "DjowdaMap/**"
+
+jobs:
+  broadcast:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+
+      - name: Read target repos list
+        id: read_repos
+        run: |
+          echo "repos<<EOF" >> $GITHUB_OUTPUT
+          cat repos.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Setup Git identity
+        run: |
+          git config --global user.name "Djowda Broadcaster Bot"
+          git config --global user.email "djowda-bot@users.noreply.github.com"
+
+      - name: Sync DjowdaMap module to all other components
+        env:
+          GITHUB_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
+        run: |
+          # Loop over each repo in repos.txt
+          while read repo; do
+            [ -z "$repo" ] && continue
+            echo "🔁 Syncing DjowdaMap to $repo ..."
+
+            repo_name=$(basename "$repo" .git)
+            branch_name="djowda-sync/DjowdaMap-$(date +%s)"
+
+            # Clone target repo
+            git clone "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@${repo#https://}" $repo_name
+            cd $repo_name
+
+            # Create new branch
+            git checkout -b "$branch_name"
+
+            # Copy updated module from source
+            rsync -av --delete ../DjowdaMap ./DjowdaMap
+
+            # Commit & push
+            git add .
+            git commit -m "Djowda Broadcaster: Sync latest DjowdaMap module"
+            git push origin "$branch_name"
+
+            echo "✅ Pushed update branch $branch_name to $repo_name"
+            cd ..
+          done < repos.txt
