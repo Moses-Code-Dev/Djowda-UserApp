@@ -1,0 +1,4 @@
+# Shared modules and files to broadcast
+DjowdaMap/
+LICENSE
+NOTICE
