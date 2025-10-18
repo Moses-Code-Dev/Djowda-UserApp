@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "DjowdaMap/**"
+      - "paths.txt"
 
 jobs:
   broadcast:
@@ -15,7 +15,57 @@ jobs:
       - name: Checkout source repo
         uses: actions/checkout@v4
 
+      - name: Check if sync is enabled
+        id: check_sync
+        run: |
+          set -euo pipefail
+          
+          echo "📋 Reading paths.txt configuration..."
+          
+          # Extract SHOULD_SYNC value
+          should_sync=$(grep "^SHOULD_SYNC=" paths.txt | cut -d'=' -f2 | tr -d ' ')
+          
+          echo "SHOULD_SYNC value: $should_sync"
+          
+          if [[ "$should_sync" != "true" ]]; then
+            echo "⏭️ SHOULD_SYNC is not true - skipping broadcast"
+            echo "sync_enabled=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "✅ SHOULD_SYNC is true - proceeding with broadcast"
+          echo "sync_enabled=true" >> $GITHUB_OUTPUT
+          
+          # Extract paths to sync (skip comments, empty lines, and SHOULD_SYNC line)
+          paths_to_sync=""
+          while IFS= read -r line || [ -n "$line" ]; do
+            # Skip empty lines, comments, and SHOULD_SYNC line
+            [[ -z "$line" || "$line" =~ ^#.* || "$line" =~ ^SHOULD_SYNC.* ]] && continue
+          
+            # Remove trailing slash for processing
+            path_clean="${line%/}"
+          
+            if [ -z "$paths_to_sync" ]; then
+              paths_to_sync="$path_clean"
+            else
+              paths_to_sync="$paths_to_sync,$path_clean"
+            fi
+          
+            echo "  📌 Will sync: $path_clean"
+          done < paths.txt
+          
+          if [ -z "$paths_to_sync" ]; then
+            echo "⚠️ No paths found to sync!"
+            echo "sync_enabled=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "paths_to_sync=$paths_to_sync" >> $GITHUB_OUTPUT
+          echo ""
+          echo "🎯 Ready to broadcast: $paths_to_sync"
+
       - name: Read target repos list
+        if: steps.check_sync.outputs.sync_enabled == 'true'
         id: read_repos
         run: |
           echo "repos<<EOF" >> $GITHUB_OUTPUT
@@ -23,70 +73,160 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Setup Git identity
+        if: steps.check_sync.outputs.sync_enabled == 'true'
         run: |
           git config --global user.name "Djowda Broadcaster Bot"
           git config --global user.email "djowda-bot@users.noreply.github.com"
 
       - name: Configure direct GitHub authentication
+        if: steps.check_sync.outputs.sync_enabled == 'true'
         env:
           SYNC_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
         run: |
           set -euo pipefail
-          # Use token for all git/https operations
           git config --global url."https://${SYNC_TOKEN}@github.com/".insteadOf "https://github.com/"
 
       - name: Install GitHub CLI
+        if: steps.check_sync.outputs.sync_enabled == 'true'
         run: |
           if ! command -v gh >/dev/null 2>&1; then
             sudo apt-get update -y
             sudo apt-get install -y gh
           fi
 
-      - name: Sync DjowdaMap module and create PRs
+      - name: Sync paths and create PRs
+        if: steps.check_sync.outputs.sync_enabled == 'true'
         env:
           SYNC_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
           GH_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
+          PATHS_TO_SYNC: ${{ steps.check_sync.outputs.paths_to_sync }}
         run: |
           set -euo pipefail
 
+          IFS=',' read -ra paths_array <<< "$PATHS_TO_SYNC"
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🚀 Starting Djowda Broadcast"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Paths to sync: ${paths_array[*]}"
+          echo ""
+
           while IFS= read -r repo || [ -n "$repo" ]; do
             [ -z "$repo" ] && continue
-            echo "🔁 Syncing DjowdaMap to $repo ..."
+          
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🔁 Processing: $repo"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            # Normalize repo path (owner/repo)
             repo_path="${repo#https://github.com/}"
             repo_path="${repo_path%.git}"
 
             repo_name=$(basename "$repo_path")
-            branch_name="djowda-sync/DjowdaMap-$(date +%s)"
+            branch_name="djowda-sync/broadcast-$(date +%s)"
 
-            # Clone using git directly (token handled by config)
+            echo "📥 Cloning $repo_path..."
             git clone "https://github.com/${repo_path}.git" "$repo_name"
             cd "$repo_name"
             git checkout -b "$branch_name"
 
-            mkdir -p ./DjowdaMap
-            rsync -av --delete ../DjowdaMap/ ./DjowdaMap/
+            synced_items=""
+          
+            for path in "${paths_array[@]}"; do
+              echo "  📋 Syncing: $path"
+          
+              if [ -d "../$path" ]; then
+                mkdir -p "./$path"
+                rsync -av --delete "../$path/" "./$path/"
+                synced_items="$synced_items\n- 📁 \`$path/\`"
+              elif [ -f "../$path" ]; then
+                mkdir -p "$(dirname "./$path")"
+                cp "../$path" "./$path"
+                synced_items="$synced_items\n- 📄 \`$path\`"
+              else
+                echo "  ⚠️ Path not found: $path (skipping)"
+                continue
+              fi
+            done
 
             git add .
             if git diff --cached --quiet; then
-              echo "⚪ No changes detected for $repo_name, skipping..."
+              echo "  ⚪ No changes detected for $repo_name - skipping"
               cd ..
+              rm -rf "$repo_name"
               continue
             fi
+          
+            commit_msg="🔄 Djowda Broadcaster: Sync shared components
 
-            git commit -m "Djowda Broadcaster: Sync latest DjowdaMap module"
+          Synchronized paths:$(echo -e "$synced_items")
+
+          This is a manual broadcast triggered by updating paths.txt.
+          Auto-generated by Djowda Broadcaster workflow."
+
+            git commit -m "$commit_msg"
+            echo "  ⬆️ Pushing branch: $branch_name"
             git push -u origin "$branch_name"
 
-            # Create PR using gh CLI (authenticated via GH_TOKEN env var)
+            pr_body="## 🤖 Djowda Broadcaster - Manual Sync
+
+          This PR synchronizes shared components from the source repository.
+
+          ### 📦 Synchronized Components
+          $(echo -e "$synced_items")
+
+          ### ℹ️ About This PR
+          - **Trigger**: Manual broadcast (SHOULD_SYNC=true in paths.txt)
+          - **Type**: Automated synchronization
+          - **Action Required**: Review changes and merge if everything looks good
+
+          ---
+          **🔗 Links:**
+          - [Source commit](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+          - [Workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          _Generated by Djowda Broadcaster Bot_"
+
+            echo "  📝 Creating pull request..."
             gh pr create \
               --repo "$repo_path" \
               --base main \
               --head "$branch_name" \
-              --title "DjowdaMap module update" \
-              --body "This PR was automatically created by the Djowda Broadcaster workflow to sync the latest DjowdaMap module." \
-              || echo "⚠️ PR creation failed or already exists for $repo_name"
+              --title "🔄 Djowda Sync: Update shared components" \
+              --body "$pr_body" \
+              || echo "  ⚠️ PR creation failed or already exists"
 
-            echo "✅ Pull request created for $repo_name"
+            echo "  ✅ Completed for $repo_name"
             cd ..
+            rm -rf "$repo_name"
           done < repos.txt
+          
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 Broadcast complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "⚠️ Remember to set SHOULD_SYNC=false in paths.txt"
+
+      - name: Auto-reset SHOULD_SYNC flag
+        if: steps.check_sync.outputs.sync_enabled == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
+        run: |
+          set -euo pipefail
+          
+          echo "🔄 Auto-resetting SHOULD_SYNC to false..."
+          
+          sed -i 's/^SHOULD_SYNC=true/SHOULD_SYNC=false/' paths.txt
+          
+          git config user.name "Djowda Broadcaster Bot"
+          git config user.email "djowda-bot@users.noreply.github.com"
+          
+          git add paths.txt
+          git commit -m "🤖 Auto-reset: Set SHOULD_SYNC=false after broadcast
+
+          Broadcast completed successfully. Ready for next manual trigger."
+          
+          git push
+          
+          echo "✅ SHOULD_SYNC reset to false"

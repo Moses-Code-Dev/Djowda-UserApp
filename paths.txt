@@ -1,4 +1,10 @@
-# Shared modules and files to broadcast
-DjowdaMap/
+# Djowda Broadcaster Paths Configuration
+# Set SHOULD_SYNC=true to trigger broadcast, then commit and push
+# After broadcast completes, set it back to false
+
+SHOULD_SYNC=false
+
+# Paths to broadcast (directories should end with /)
+
 LICENSE
-NOTICE
+NOTICE.md
