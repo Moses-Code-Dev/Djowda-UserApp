@@ -1,7 +1,7 @@
 name: Djowda Plugin Broadcaster
 
 permissions:
-  contents: read
+  contents: write
 
 on:
   push:
@@ -214,23 +214,23 @@ jobs:
           echo ""
           echo "⚠️ Remember to set SHOULD_SYNC=false in paths.txt"
 
-         - name: Auto-reset SHOULD_SYNC flag
-          if: steps.check_sync.outputs.sync_enabled == 'true'
-          run: |
-            set -euo pipefail
-            
-            echo "🔄 Auto-resetting SHOULD_SYNC to false..."
-            
-            sed -i 's/^SHOULD_SYNC=true/SHOULD_SYNC=false/' paths.txt
-            
-            git config user.name "Djowda Broadcaster Bot"
-            git config user.email "djowda-bot@users.noreply.github.com"
-            
-            git add paths.txt
-            git commit -m "🤖 Auto-reset: Set SHOULD_SYNC=false after broadcast
-            
-            Broadcast completed successfully. Ready for next manual trigger."
-            
-            git push
-            
-            echo "✅ SHOULD_SYNC reset to false"
+      - name: Auto-reset SHOULD_SYNC flag
+        if: steps.check_sync.outputs.sync_enabled == 'true'
+        run: |
+          set -euo pipefail
+          
+          echo "🔄 Auto-resetting SHOULD_SYNC to false..."
+          
+          sed -i 's/^SHOULD_SYNC=true/SHOULD_SYNC=false/' paths.txt
+          
+          git config user.name "Djowda Broadcaster Bot"
+          git config user.email "djowda-bot@users.noreply.github.com"
+          
+          git add paths.txt
+          git commit -m "🤖 Auto-reset: Set SHOULD_SYNC=false after broadcast
+          
+          Broadcast completed successfully. Ready for next manual trigger."
+          
+          git push
+          
+          echo "✅ SHOULD_SYNC reset to false"
