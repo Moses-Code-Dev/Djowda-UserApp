@@ -17,6 +17,9 @@ jobs:
     steps:
       - name: Checkout source repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.DJOWDA_SYNC_TOKEN }}
+          fetch-depth: 0
 
       - name: Check if sync is enabled
         id: check_sync
@@ -211,32 +214,23 @@ jobs:
           echo ""
           echo "⚠️ Remember to set SHOULD_SYNC=false in paths.txt"
 
-      - name: Auto-reset SHOULD_SYNC flag
-        if: steps.check_sync.outputs.sync_enabled == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
-          SYNC_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
-
-        run: |
-          set -euo pipefail
-          
-          echo "🔄 Auto-resetting SHOULD_SYNC to false..."
-          
-          # Update paths.txt
-          sed -i 's/^SHOULD_SYNC=true/SHOULD_SYNC=false/' paths.txt
-          
-          # Configure git to use the token
-          git config user.name "Djowda Broadcaster Bot"
-          git config user.email "djowda-bot@users.noreply.github.com"
-          
-          # Configure authentication for push
-          git remote set-url origin "https://x-access-token:${SYNC_TOKEN}@github.com/${{ github.repository }}.git"
-          
-          git add paths.txt
-          git commit -m "🤖 Auto-reset: Set SHOULD_SYNC=false after broadcast
-          
-          Broadcast completed successfully. Ready for next manual trigger."
-          
-          git push origin main
-          
-          echo "✅ SHOULD_SYNC reset to false"
+         - name: Auto-reset SHOULD_SYNC flag
+          if: steps.check_sync.outputs.sync_enabled == 'true'
+          run: |
+            set -euo pipefail
+            
+            echo "🔄 Auto-resetting SHOULD_SYNC to false..."
+            
+            sed -i 's/^SHOULD_SYNC=true/SHOULD_SYNC=false/' paths.txt
+            
+            git config user.name "Djowda Broadcaster Bot"
+            git config user.email "djowda-bot@users.noreply.github.com"
+            
+            git add paths.txt
+            git commit -m "🤖 Auto-reset: Set SHOULD_SYNC=false after broadcast
+            
+            Broadcast completed successfully. Ready for next manual trigger."
+            
+            git push
+            
+            echo "✅ SHOULD_SYNC reset to false"
