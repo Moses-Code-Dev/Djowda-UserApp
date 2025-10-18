@@ -212,21 +212,28 @@ jobs:
         if: steps.check_sync.outputs.sync_enabled == 'true'
         env:
           GH_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
+          SYNC_TOKEN: ${{ secrets.DJOWDA_SYNC_TOKEN }}
+
         run: |
           set -euo pipefail
           
           echo "🔄 Auto-resetting SHOULD_SYNC to false..."
           
+          # Update paths.txt
           sed -i 's/^SHOULD_SYNC=true/SHOULD_SYNC=false/' paths.txt
           
+          # Configure git to use the token
           git config user.name "Djowda Broadcaster Bot"
           git config user.email "djowda-bot@users.noreply.github.com"
           
+          # Configure authentication for push
+          git remote set-url origin "https://x-access-token:${SYNC_TOKEN}@github.com/${{ github.repository }}.git"
+          
           git add paths.txt
           git commit -m "🤖 Auto-reset: Set SHOULD_SYNC=false after broadcast
-
+          
           Broadcast completed successfully. Ready for next manual trigger."
           
-          git push
+          git push origin main
           
           echo "✅ SHOULD_SYNC reset to false"
