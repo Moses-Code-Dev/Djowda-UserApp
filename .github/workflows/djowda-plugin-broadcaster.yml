@@ -34,37 +34,38 @@ jobs:
           while read repo; do
             [ -z "$repo" ] && continue
             echo "🔁 Syncing DjowdaMap to $repo ..."
-
+          
             repo_name=$(basename "$repo" .git)
             branch_name="djowda-sync/DjowdaMap-$(date +%s)"
-
+          
             git clone "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@${repo#https://}" $repo_name
             cd $repo_name
             git checkout -b "$branch_name"
-
+          
             mkdir -p ./DjowdaMap
             rsync -av --delete ../DjowdaMap/ ./DjowdaMap/
-
+          
             git add .
             if git diff --cached --quiet; then
               echo "⚪ No changes detected for $repo_name, skipping..."
               cd ..
               continue
             fi
-
+          
             git commit -m "Djowda Broadcaster: Sync latest DjowdaMap module"
             git push origin "$branch_name"
-
-            # ✅ Create PR directly with token and explicit repo
+          
+            # ✅ Authenticate and create PR
+            echo "$GITHUB_TOKEN" | gh auth login --with-token
             gh pr create \
               --repo "Moses-Code-Dev/$repo_name" \
               --base main \
               --head "$branch_name" \
               --title "DjowdaMap module update" \
-              --body "This PR was automatically created by the Djowda Broadcaster workflow to sync the latest DjowdaMap module." \
-              --token "$GITHUB_TOKEN"
-
+              --body "This PR was automatically created by the Djowda Broadcaster workflow to sync the latest DjowdaMap module."
+          
             echo "✅ Pull request created for $repo_name"
             cd ..
           done < repos.txt
+     
       
