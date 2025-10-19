@@ -9,22 +9,10 @@ platform :android do
   desc "Increment version, build, and deploy to internal track"
   lane :deploy_internal do
 
-    # 1. Increment the version code using custom script
-    gradle_file = "./app/build.gradle.kts"
-
-    # Read current version code (handles comments and whitespace)
-    file_content = File.read(gradle_file)
-    current_version = file_content[/versionCode\s*=\s*(\d+)/, 1].to_i
-    new_version = current_version + 1
-
-    # Replace the version code
-    new_content = file_content.gsub(
-      /versionCode\s*=\s*\d+.*$/,
-      "versionCode = #{new_version}"
+    # 1. Increment the version code using the plugin
+    increment_version_code(
+      gradle_file_path: "./app/build.gradle.kts"
     )
-    File.write(gradle_file, new_content)
-
-    UI.success("✅ Version code incremented: #{current_version} → #{new_version}")
 
     # 2. Build the app bundle
     gradle(
