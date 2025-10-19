@@ -49,7 +49,10 @@ jobs:
 
       # 7️⃣ Prepare Play Store JSON key
       - name: Prepare Play Store service account key
-        run: echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" > /tmp/play_store_key.json
+        run: |
+          echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" | base64 -d > /tmp/play_store_key.json
+          echo "JSON file created, validating..."
+          cat /tmp/play_store_key.json | jq empty && echo "✅ Valid JSON" || echo "❌ Invalid JSON"
 
       # 8️⃣ Increment, Build, and Deploy
       - name: Increment, Build, and Deploy
