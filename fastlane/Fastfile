@@ -19,16 +19,23 @@ platform :android do
       task: "clean bundleRelease"
     )
 
-    # 3. Upload to Play Store
-        upload_to_play_store(
-          track: 'internal',
-          aab: './app/build/outputs/bundle/release/app-release.aab',
-          json_key: '/tmp/play_store_key.json',
-          package_name: 'com.djowda.djowdaUser',
-          skip_upload_metadata: true,
-          skip_upload_images: true,
-          skip_upload_screenshots: true,
-          release_status: 'completed'  # Auto-publish to internal track
-        )
+   # 3. Upload to Play Store
+       upload_to_play_store(
+         track: 'internal',
+         release_name: "Build #{lane_context[SharedValues::VERSION_CODE]}",
+         aab: './app/build/outputs/bundle/release/app-release.aab',
+         json_key: '/tmp/play_store_key.json',
+         package_name: 'com.djowda.djowdaUser',
+         skip_upload_metadata: true,
+         skip_upload_images: true,
+         skip_upload_screenshots: true,
+         release_status: 'completed',
+         version_code: lane_context[SharedValues::VERSION_CODE],
+         changes_not_sent_for_review: false,
+         # Default release notes (you can customize this)
+         release_notes: {
+           'en-US' => "Bug fixes and performance improvements"
+         }
+       )
   end
 end
