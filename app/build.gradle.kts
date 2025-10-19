@@ -20,8 +20,8 @@
 
 plugins {
     alias(libs.plugins.android.application)
-//    alias(libs.plugins.google.gms.google.services)
-//    alias(libs.plugins.google.firebase.crashlytics)
+    // alias(libs.plugins.google.gms.google.services)
+    // alias(libs.plugins.google.firebase.crashlytics)
 }
 
 android {
@@ -32,7 +32,7 @@ android {
         applicationId = "com.djowda.djowdaUser"
         minSdk = 27
         targetSdk = 36
-        versionCode = 1
+        versionCode = 1  // will be auto-incremented by Fastlane if configured
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -40,6 +40,20 @@ android {
             annotationProcessorOptions {
                 arguments["room.schemaLocation"] = "$projectDir/schemas"
             }
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+            // Use the keystore created dynamically by GitHub Actions
+            val keystoreFile = rootProject.file("release.keystore") // path relative to root
+            if (!keystoreFile.exists()) {
+                println("WARNING: release.keystore not found! Build may fail on CI.")
+            }
+            storeFile = keystoreFile
+            storePassword = System.getenv("RELEASE_STORE_PASSWORD")
+            keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
         }
     }
 
@@ -53,8 +67,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -62,12 +78,9 @@ android {
 }
 
 dependencies {
-
-//    implementation(project(":Shared_res"))
     implementation(project(":DjowdaMap"))
 
     implementation(libs.core.splashscreen)
-
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
@@ -77,34 +90,13 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.lifecycle.livedata)
 
-
     annotationProcessor(libs.compiler)
     implementation(libs.glide.transformations)
 
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)
 
-//    implementation(platform(libs.firebase.bom))
-//    implementation(libs.firebase.auth)
-//    implementation(libs.firebase.database)
-//    implementation(libs.firebase.storage)
-//    implementation(libs.firebase.messaging)
-
-//    implementation(libs.firebase.ui.auth)
     implementation(libs.libphonenumber)
-
-//    implementation(libs.app.update)
-//    implementation(libs.integrity)
-//    implementation(libs.app.update.ktx)
-//    implementation(libs.firebase.appcheck.playintegrity)
-//
-//    implementation(libs.firebase.analytics)
-//    implementation(libs.firebase.crashlytics)
-
-//    debugImplementation(libs.leakcanary.android)
-
-
-
 
     debugImplementation(libs.leakcanary.android)
 

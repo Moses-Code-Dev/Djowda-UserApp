@@ -3,7 +3,7 @@ name: Djowda Auto-Publish
 on:
   push:
     branches:
-      - deployment   # only trigger on deployment branch
+      - deployment   # Trigger only on deployment branch
 
 jobs:
   build-and-publish:
@@ -14,30 +14,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up JDK
+      # 2️⃣ Set up JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3️⃣ Decode the keystore
+      # 3️⃣ Cache Gradle wrapper & caches
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/wrapper/
+            ~/.gradle/caches/
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # 4️⃣ Decode release keystore
       - name: Decode release keystore
-        run: |
-          echo "${{ secrets.RELEASE_STORE_FILE }}" | base64 --decode > release.keystore
+        run: echo "${{ secrets.RELEASE_STORE_FILE }}" | base64 --decode > release.keystore
 
-      # 4️⃣ Build the AAB
+      # 5️⃣ Make Gradle wrapper executable
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # 6️⃣ Build release bundle (multi-module support)
       - name: Build release bundle
-        run: |
-          chmod +x ./gradlew
-          ./gradlew :app:bundleRelease \
-            -Pandroid.injected.signing.store.file=release.keystore \
-            -Pandroid.injected.signing.store.password=${{ secrets.RELEASE_STORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.RELEASE_KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.RELEASE_KEY_PASSWORD }}
-      
+        run: ./gradlew :app:bundleRelease
+        env:
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
-      # 5️⃣ Install Ruby & Fastlane
+      # 7️⃣ Install Ruby & Fastlane
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -46,21 +57,23 @@ jobs:
       - name: Install Fastlane
         run: gem install fastlane
 
-      # 6️⃣ Deploy to Play Store
+      # 8️⃣ Write Play Store service account JSON to disk
+      - name: Prepare Play Store service account key
+        run: echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" > /tmp/play_store_key.json
+
+      # 9️⃣ Deploy to Play Store using Fastlane
       - name: Deploy to Play Store
         run: |
+          # Optional: increment version code automatically
+          fastlane run increment_version_code gradle_file:"app/build.gradle.kts"
+
+          # Deploy the AAB to internal track
           fastlane supply \
             --aab app/build/outputs/bundle/release/app-release.aab \
             --json_key /tmp/play_store_key.json \
             --track internal \
-            --package_name com.djowda.app
-        env:
-          # Temporary file for Fastlane
-          FASTLANE_JSON_KEY: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
-          # Write JSON key to disk at runtime
-          PLAY_STORE_KEY_PATH: /tmp/play_store_key.json
-      - run: echo "${FASTLANE_JSON_KEY}" > "${PLAY_STORE_KEY_PATH}"
+            --package_name com.djowda.djowdaUser
 
-      # 7️⃣ Clean up
+      # 🔟 Clean up sensitive files
       - name: Clean up
-        run: rm -f release.keystore "${PLAY_STORE_KEY_PATH}"
+        run: rm -f release.keystore /tmp/play_store_key.json
