@@ -65,7 +65,7 @@ jobs:
       - name: Deploy to Play Store
         run: |
           # Optional: increment version code automatically
-          fastlane run increment_version_code gradle_file:"app/build.gradle.kts"
+          fastlane run increment_version_number gradle_file:"app/build.gradle.kts" # ✅ CORRECTED ACTION
 
           # Deploy the AAB to internal track
           fastlane supply \
