@@ -1,0 +1,32 @@
+# fastlane/Fastfile
+
+# Disables analytics
+opt_out_usage
+
+default_platform(:android)
+
+platform :android do
+  desc "Increment version, build, and deploy to internal track"
+  lane :deploy_internal do
+
+    # 1. Increment the version code
+    # This is the CORRECT action for Android
+    android_increment_version_code(
+      gradle_file_path: "../app/build.gradle.kts" # Path from /fastlane to your build file
+    )
+
+    # 2. Build the app bundle
+    # Fastlane will run Gradle for you
+    gradle(
+      task: ":app:bundleRelease"
+    )
+
+    # 3. Upload to Play Store
+    upload_to_play_store(
+      track: 'internal',
+      aab: '../app/build/outputs/bundle/release/app-release.aab',
+      json_key: '/tmp/play_store_key.json', # The key file the workflow creates
+      package_name: 'com.djowda.djowdaUser'
+    )
+  end
+end

@@ -40,44 +40,27 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # 6️⃣ Setup Ruby & install Fastlane
+      # 6️⃣ Setup Ruby & install Fastlane (via Gemfile)
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
+          bundler-cache: true # This automatically runs 'bundle install' using your Gemfile
 
-      - name: Install Fastlane
-        run: gem install fastlane
+      # 7️⃣ Prepare Play Store JSON key
+      - name: Prepare Play Store service account key
+        run: echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" > /tmp/play_store_key.json
 
-      # 6️⃣a Disable Fastlane analytics
-      - name: Disable Fastlane analytics
-        run: fastlane run opt_out_usage
-
-      # 7️⃣ Increment version code automatically
-      - name: Increment version number
-        run: fastlane run android_increment_version_code gradle_file_path:app/build.gradle.kts
-
-      # 8️⃣ Build release bundle
-      - name: Build release bundle
-        run: ./gradlew :app:bundleRelease
+      # 8️⃣ Increment, Build, and Deploy (Now using Fastfile)
+      # This ONE step replaces your old, broken steps
+      - name: Increment, Build, and Deploy
+        run: cd fastlane && bundle exec fastlane deploy_internal
         env:
+          # The Gradle build step (inside Fastlane) needs these secrets
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
-      # 9️⃣ Prepare Play Store JSON key
-      - name: Prepare Play Store service account key
-        run: echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" > /tmp/play_store_key.json
-
-      # 🔟 Deploy directly via Fastlane command
-      - name: Deploy to Play Store
-        run: |
-          fastlane supply \
-            --aab app/build/outputs/bundle/release/app-release.aab \
-            --json_key /tmp/play_store_key.json \
-            --track internal \
-            --package_name com.djowda.djowdaUser
-
-      # 1️⃣1️⃣ Clean up sensitive files
+      # 9️⃣ Clean up sensitive files
       - name: Clean up
         run: rm -f release.keystore /tmp/play_store_key.json
