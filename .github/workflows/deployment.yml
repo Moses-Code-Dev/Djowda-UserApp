@@ -45,18 +45,20 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
-          bundler-cache: true # This automatically runs 'bundle install' using your Gemfile
+          bundler-cache: true
+
+      # 6.5️⃣ Install Fastlane plugins
+      - name: Install Fastlane plugins
+        run: cd fastlane && bundle exec fastlane install_plugins
 
       # 7️⃣ Prepare Play Store JSON key
       - name: Prepare Play Store service account key
         run: echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" > /tmp/play_store_key.json
 
-      # 8️⃣ Increment, Build, and Deploy (Now using Fastfile)
-      # This ONE step replaces your old, broken steps
+      # 8️⃣ Increment, Build, and Deploy
       - name: Increment, Build, and Deploy
         run: cd fastlane && bundle exec fastlane deploy_internal
         env:
-          # The Gradle build step (inside Fastlane) needs these secrets
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
