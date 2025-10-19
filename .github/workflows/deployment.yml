@@ -1,0 +1,63 @@
+name: Djowda Auto-Publish
+
+on:
+  push:
+    branches:
+      - deployment   # only trigger on deployment branch
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Set up JDK
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3️⃣ Decode the keystore
+      - name: Decode release keystore
+        run: |
+          echo "${{ secrets.RELEASE_STORE_FILE }}" | base64 --decode > release.keystore
+
+      # 4️⃣ Build the AAB
+      - name: Build release bundle
+        run: ./gradlew bundleRelease \
+          -Pandroid.injected.signing.store.file=release.keystore \
+          -Pandroid.injected.signing.store.password=${{ secrets.RELEASE_STORE_PASSWORD }} \
+          -Pandroid.injected.signing.key.alias=${{ secrets.RELEASE_KEY_ALIAS }} \
+          -Pandroid.injected.signing.key.password=${{ secrets.RELEASE_KEY_PASSWORD }}
+
+      # 5️⃣ Install Ruby & Fastlane
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install Fastlane
+        run: gem install fastlane
+
+      # 6️⃣ Deploy to Play Store
+      - name: Deploy to Play Store
+        run: |
+          fastlane supply \
+            --aab app/build/outputs/bundle/release/app-release.aab \
+            --json_key /tmp/play_store_key.json \
+            --track internal \
+            --package_name com.djowda.app
+        env:
+          # Temporary file for Fastlane
+          FASTLANE_JSON_KEY: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+          # Write JSON key to disk at runtime
+          PLAY_STORE_KEY_PATH: /tmp/play_store_key.json
+      - run: echo "${FASTLANE_JSON_KEY}" > "${PLAY_STORE_KEY_PATH}"
+
+      # 7️⃣ Clean up
+      - name: Clean up
+        run: rm -f release.keystore "${PLAY_STORE_KEY_PATH}"
