@@ -28,7 +28,8 @@ jobs:
 
       # 4️⃣ Build the AAB
       - name: Build release bundle
-        run: ./gradlew bundleRelease \
+        run: chmod +x ./gradlew
+          ./gradlew bundleRelease \
           -Pandroid.injected.signing.store.file=release.keystore \
           -Pandroid.injected.signing.store.password=${{ secrets.RELEASE_STORE_PASSWORD }} \
           -Pandroid.injected.signing.key.alias=${{ secrets.RELEASE_KEY_ALIAS }} \
