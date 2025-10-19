@@ -55,7 +55,7 @@ jobs:
 
       # 7️⃣ Increment version code automatically
       - name: Increment version number
-        run: fastlane run increment_version_number gradle_file_path:app/build.gradle.kts
+        run: fastlane run android_increment_version_code gradle_file_path:app/build.gradle.kts
 
       # 8️⃣ Build release bundle
       - name: Build release bundle
