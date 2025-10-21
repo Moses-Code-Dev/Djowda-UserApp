@@ -2,10 +2,16 @@
 # Set SHOULD_SYNC=true to trigger broadcast, then commit and push
 # After broadcast completes, set it back to false
 
-SHOULD_SYNC=false
+SHOULD_SYNC=true
 
 # Paths to broadcast (directories should end with /)
 
 
 .github/FUNDING.yml
+.github/deployment.yml
+fastlane/
+Gemfile
+repos.txt
+Shared_res
+DjowdaMap
 
