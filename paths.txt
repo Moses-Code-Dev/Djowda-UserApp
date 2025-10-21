@@ -12,6 +12,6 @@ SHOULD_SYNC=true
 fastlane/
 Gemfile
 repos.txt
-Shared_res
-DjowdaMap
+Shared_res/
+DjowdaMap/
 
