@@ -36,11 +36,13 @@ import com.djowda.djowdaUser.MainBottomUI.HomeFragmentMS;
 import com.djowda.djowdaUser.MainBottomUI.MsCartsFragment;
 import com.djowda.djowdaUser.MainBottomUI.NetworkFragment;
 import com.djowda.djowdaUser.MainBottomUI.SettingsFragment;
+import com.djowda.djowdamap.MapFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.button.MaterialButton;
 
 public class MainFragment extends Fragment {
 
-    private BottomNavigationView bottomNavigationView;
+    private MaterialButton btn_openDjowdaMap;
 
     public MainFragment() {
         // Required empty public constructor
@@ -56,15 +58,32 @@ public class MainFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
 
+        btn_openDjowdaMap = view.findViewById(R.id.btn_openDjowdaMap);
+
+        btn_openDjowdaMap.setOnClickListener(view1 -> {
+
+            OpenDjowdaMap();
+
+        });
 
         return view;
     }
+
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         // Show the home fragment by default
 
+    }
+
+    private void OpenDjowdaMap() {
+
+        // Create an instance of the map fragment
+        MapFragment mapFragment = new MapFragment();
+
+        // Show the dialog fragment using the parent fragment manager and a unique tag
+        mapFragment.show(getParentFragmentManager(), "MapFragment");
     }
 
 }
