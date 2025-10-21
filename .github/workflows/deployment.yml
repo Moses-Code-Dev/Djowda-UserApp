@@ -1,4 +1,6 @@
 name: Djowda Auto-Publish
+permissions:
+  contents: read
 
 on:
   push:

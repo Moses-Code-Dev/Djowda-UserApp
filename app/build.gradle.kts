@@ -78,6 +78,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":Shared_res"))
     implementation(project(":DjowdaMap"))
 
     implementation(libs.core.splashscreen)
@@ -98,7 +99,7 @@ dependencies {
 
     implementation(libs.libphonenumber)
 
-    debugImplementation(libs.leakcanary.android)
+//    debugImplementation(libs.leakcanary.android)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

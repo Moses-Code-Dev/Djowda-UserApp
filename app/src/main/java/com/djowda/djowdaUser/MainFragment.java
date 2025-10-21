@@ -36,11 +36,13 @@ import com.djowda.djowdaUser.MainBottomUI.HomeFragmentMS;
 import com.djowda.djowdaUser.MainBottomUI.MsCartsFragment;
 import com.djowda.djowdaUser.MainBottomUI.NetworkFragment;
 import com.djowda.djowdaUser.MainBottomUI.SettingsFragment;
+import com.djowda.djowdamap.MapFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.button.MaterialButton;
 
 public class MainFragment extends Fragment {
 
-    private BottomNavigationView bottomNavigationView;
+    private MaterialButton btn_openDjowdaMap;
 
     public MainFragment() {
         // Required empty public constructor
@@ -55,43 +57,33 @@ public class MainFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
-        bottomNavigationView = view.findViewById(R.id.main_nav_view);
 
-        HandleBottomNavigationView();
+        btn_openDjowdaMap = view.findViewById(R.id.btn_openDjowdaMap);
+
+        btn_openDjowdaMap.setOnClickListener(view1 -> {
+
+            OpenDjowdaMap();
+
+        });
+
         return view;
     }
+
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         // Show the home fragment by default
-        replaceFragment(new HomeFragmentMS());
+
     }
 
-    public void HandleBottomNavigationView() {
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
+    private void OpenDjowdaMap() {
 
-            if (itemId == R.id.navigation_home) {
-                replaceFragment(new HomeFragmentMS());
-            } else if (itemId == R.id.navigation_carts) {
-                replaceFragment(new MsCartsFragment());
-            } else if (itemId == R.id.navigation_network) {
-                replaceFragment(new NetworkFragment());
-            } else if (itemId == R.id.navigation_Activities) {
-                replaceFragment(new ActivitiesFragment());
-            } else if (itemId == R.id.navigation_settings) {
-                replaceFragment(new SettingsFragment());
-            }
+        // Create an instance of the map fragment
+        MapFragment mapFragment = new MapFragment();
 
-            return true;
-        });
+        // Show the dialog fragment using the parent fragment manager and a unique tag
+        mapFragment.show(getParentFragmentManager(), "MapFragment");
     }
 
-    private void replaceFragment(Fragment fragment) {
-        FragmentManager fm = getParentFragmentManager();
-        FragmentTransaction ft = fm.beginTransaction();
-        ft.replace(R.id.mainStart_host_fragment, fragment);
-        ft.commit();
-    }
 }
