@@ -44,3 +44,4 @@ dependencyResolutionManagement {
 rootProject.name = "Djowda User"
 include(":app")
 include(":DjowdaMap")
+include(":Shared_res")

@@ -55,9 +55,8 @@ public class MainFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
-        bottomNavigationView = view.findViewById(R.id.main_nav_view);
 
-        HandleBottomNavigationView();
+
         return view;
     }
 
@@ -65,33 +64,7 @@ public class MainFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         // Show the home fragment by default
-        replaceFragment(new HomeFragmentMS());
+
     }
 
-    public void HandleBottomNavigationView() {
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-
-            if (itemId == R.id.navigation_home) {
-                replaceFragment(new HomeFragmentMS());
-            } else if (itemId == R.id.navigation_carts) {
-                replaceFragment(new MsCartsFragment());
-            } else if (itemId == R.id.navigation_network) {
-                replaceFragment(new NetworkFragment());
-            } else if (itemId == R.id.navigation_Activities) {
-                replaceFragment(new ActivitiesFragment());
-            } else if (itemId == R.id.navigation_settings) {
-                replaceFragment(new SettingsFragment());
-            }
-
-            return true;
-        });
-    }
-
-    private void replaceFragment(Fragment fragment) {
-        FragmentManager fm = getParentFragmentManager();
-        FragmentTransaction ft = fm.beginTransaction();
-        ft.replace(R.id.mainStart_host_fragment, fragment);
-        ft.commit();
-    }
 }

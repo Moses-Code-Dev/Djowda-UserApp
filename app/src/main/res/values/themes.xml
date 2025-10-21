@@ -21,38 +21,72 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.DjowdaUser" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- Core -->
+        <item name="colorPrimary">@color/user_primary</item>
 
-        <!-- will be changed. -->
-        <item name="colorPrimary">@android:color/holo_orange_dark</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@android:color/holo_orange_light</item>
-        <item name="colorSecondaryVariant">@color/teal_700</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">@android:color/holo_orange_dark</item>
+        <!--        <item name="colorPrimary">@color/store_primary</item>-->
+        <!--        <item name="colorPrimary">@color/store_admin_primary</item>-->
+        <!--        <item name="colorPrimary">@color/farmer_primary</item>-->
+        <!--        <item name="colorPrimary">@color/delivery_primary</item>-->
+        <!--        <item name="colorPrimary">@color/factory_primary</item>-->
+        <!--        <item name="colorPrimary">@color/wholesaler_primary</item>-->
+        <!--        <item name="colorPrimary">@color/restaurant_primary</item>-->
+        <!--        <item name="colorPrimary">@color/seed_primary</item>-->
+        <!--        <item name="colorPrimary">@color/transport_primary</item>-->
+        <!--        -->
+
+
+        <item name="colorSecondary">@color/user_secondary</item>
+
+        <!--        <item name="colorSecondary">@color/store_primary</item>-->
+        <!--        <item name="colorSecondary">@color/store_admin_primary</item>-->
+        <!--        <item name="colorSecondary">@color/farmer_primary</item>-->
+        <!--        <item name="colorSecondary">@color/delivery_primary</item>-->
+        <!--        <item name="colorSecondary">@color/factory_primary</item>-->
+        <!--        <item name="colorSecondary">@color/wholesaler_primary</item>-->
+        <!--        <item name="colorSecondary">@color/restaurant_primary</item>-->
+        <!--        <item name="colorSecondary">@color/seed_primary</item>-->
+        <!--        <item name="colorSecondary">@color/transport_primary</item>-->
+
+
+        <item name="colorBackground">@color/user_background</item>
+        <item name="colorSurface">@color/user_card</item>
+        <item name="colorNavbar">@color/user_navbar</item>
+
+        <!-- Buttons -->
+        <item name="buttonColorPrimary">@color/user_button_primary</item>
+        <item name="buttonColorText">@color/user_button_text</item>
+        <item name="buttonColorDisabled">@color/user_button_disabled</item>
+
+        <!-- Text -->
+        <item name="textColorPrimary">@color/user_text_primary</item>
+        <item name="textColorSecondary">@color/user_text_secondary</item>
+
+        <!-- Global -->
+        <item name="colorActive">@color/dj_primary</item>
+        <item name="colorInactive">@color/dj_gray</item>
+        <item name="colorBlack">@color/dj_black</item>
+        <item name="colorWhite">@color/dj_white</item>
+
     </style>
 
     <style name="Theme.DjowdaUser" parent="Base.Theme.DjowdaUser" />
 
-<!--    <style name="Theme.App.Starting" parent="Theme.SplashScreen">-->
-<!--        &lt;!&ndash; Set the splash screen background, animated icon, and animation-->
-<!--        duration. &ndash;&gt;-->
-<!--        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>-->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- Set the splash screen background, animated icon, and animation
+        duration. -->
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
 
-<!--        &lt;!&ndash; Use windowSplashScreenAnimatedIcon to add a drawable or an animated-->
-<!--             drawable. One of these is required. &ndash;&gt;-->
-<!--        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>-->
-<!--        &lt;!&ndash; Required for animated icons. &ndash;&gt;-->
-<!--&lt;!&ndash;        <item name="windowSplashScreenAnimationDuration">200</item>&ndash;&gt;-->
+        <!-- Use windowSplashScreenAnimatedIcon to add a drawable or an animated
+             drawable. One of these is required. -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>
+        <!-- Required for animated icons. -->
+<!--        <item name="windowSplashScreenAnimationDuration">200</item>-->
 
-<!--        &lt;!&ndash; Set the theme of the Activity that directly follows your splash-->
-<!--        screen. This is required. &ndash;&gt;-->
-<!--        <item name="postSplashScreenTheme">@style/Base.Theme.DjowdaUser</item>-->
-<!--    </style>-->
+        <!-- Set the theme of the Activity that directly follows your splash
+        screen. This is required. -->
+        <item name="postSplashScreenTheme">@style/Base.Theme.DjowdaUser</item>
+    </style>
 
 
 </resources>

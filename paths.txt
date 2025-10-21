@@ -6,6 +6,6 @@ SHOULD_SYNC=false
 
 # Paths to broadcast (directories should end with /)
 
-LICENSE
-NOTICE.md
+
+.github/FUNDING.yml
 

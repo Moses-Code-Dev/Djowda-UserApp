@@ -78,6 +78,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":Shared_res"))
     implementation(project(":DjowdaMap"))
 
     implementation(libs.core.splashscreen)
