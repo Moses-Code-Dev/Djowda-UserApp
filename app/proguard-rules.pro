@@ -21,4 +21,4 @@
 #-renamesourcefileattribute SourceFile
 
 # This is generated automatically by the Android Gradle plugin.
--dontwarn com.djowda.djowdamap.MapFragment
+#-dontwarn com.djowda.djowdamap.MapFragment
