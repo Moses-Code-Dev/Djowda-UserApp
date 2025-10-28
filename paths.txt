@@ -7,7 +7,6 @@ SHOULD_SYNC=false
 # Paths to broadcast (directories should end with /)
 
 
-.github/FUNDING.yml
-.github/deployment.yml
+
 
 
