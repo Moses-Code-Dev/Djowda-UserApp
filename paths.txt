@@ -9,9 +9,5 @@ SHOULD_SYNC=false
 
 .github/FUNDING.yml
 .github/deployment.yml
-fastlane/
-Gemfile
-repos.txt
-Shared_res/
-DjowdaMap/
+
 
