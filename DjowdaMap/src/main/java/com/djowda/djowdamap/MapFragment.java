@@ -36,9 +36,8 @@ import android.os.Bundle;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
+
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -52,7 +51,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.djowda.djowdamap.MapTest.Bubbles.ChatFragment;
+import com.djowda.bubblechat.ChatFragment;
+
 import com.djowda.djowdamap.MapTest.Bubbles.ComponentOverViewFragment;
 import com.djowda.djowdamap.MapTest.Bubbles.MapToolsFragment;
 import com.djowda.djowdamap.MapTest.Bubbles.StatisticsFragment;
@@ -131,7 +131,7 @@ public class MapFragment extends DialogFragment implements GridAdapter.ItemClick
         scrollView = view.findViewById(R.id.customScrollView);
 
         setupRecyclerView();
-//        AttachBubbles();
+        AttachBubbles();
     }
 
 
@@ -140,21 +140,6 @@ public class MapFragment extends DialogFragment implements GridAdapter.ItemClick
     }
 
     private void setupRecyclerView() {
-//        GridLayoutManager layoutManager = new GridLayoutManager(requireContext(), TileMap.getMapSize());
-//        layoutManager.setOrientation(RecyclerView.VERTICAL);
-//
-//        recyclerView.setLayoutManager(layoutManager);
-//        adapter = new GridAdapter(requireContext());
-//        recyclerView.setHasFixedSize(true);
-//        recyclerView.setItemViewCacheSize(50);
-////        recyclerView.setDrawingCacheEnabled(true);
-////        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
-//        recyclerView.setAdapter(adapter);
-//
-//        adapter.setClickListener(this);
-//
-//        // Center the grid
-//        scrollView.post(() -> scrollView.centerOnGrid());
 
 
         GridLayoutManager layoutManager = new GridLayoutManager(requireContext(), TileMap.getMapSize());
@@ -198,9 +183,9 @@ public class MapFragment extends DialogFragment implements GridAdapter.ItemClick
 
     private void AttachBubbles() {
         AttachChatFragment();
-        AttachComponentOverViewFragment();
-        AttachMapToolsFragment();
-        AttachStatisticsFragment();
+//        AttachComponentOverViewFragment();
+//        AttachMapToolsFragment();
+//        AttachStatisticsFragment();
 //        AttachCommunityFragment();
     }
 

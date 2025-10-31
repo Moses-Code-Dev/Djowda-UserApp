@@ -1,14 +1,107 @@
-<?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ /*
+  ~  * Created by the Djowda Project Team
+  ~  * Copyright (c) 2017-2025 Djowda. All rights reserved.
+  ~  *
+  ~  * This file is part of the Djowda Project.
+  ~  *
+  ~  * Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0)
+  ~  *
+  ~  * You may redistribute and/or modify this file under the terms of the
+  ~  * GNU Affero General Public License as published by the Free Software Foundation,
+  ~  * either version 3 of the License, or (at your option) any later version.
+  ~  *
+  ~  * This file is distributed in the hope that it will be useful,
+  ~  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  ~  * GNU Affero General Public License for more details.
+  ~  *
+  ~  * You should have received a copy of the GNU Affero General Public License
+  ~  * along with this file. If not, see <https://www.gnu.org/licenses/>.
+  ~  *
+  ~  * Notes:
+  ~  * - The Djowda Project is a community-driven initiative evolving toward a decentralized food ecosystem.
+  ~  * - Contributions are welcome under the AGPL terms.
+  ~  *
+  ~  * Last Modified: 2025-10-31 14:41
+  ~  */
+  ~
+  -->
+
+<androidx.constraintlayout.widget.ConstraintLayout
+
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:alpha="0.7"
     tools:context=".ChatFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_height="wrap_content"
+        android:background="@drawable/chat_background_00"
 
-</FrameLayout>
+
+        android:orientation="horizontal"
+
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/txt_chatMsgs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="150dp"
+            android:fontFamily="@font/andika"
+            android:maxLines="2"
+            android:minHeight="60dp"
+            android:paddingBottom="5dp"
+            android:text="Txt_msg 01 \nText_msg 02"
+            android:textColor="@color/dj_black"
+            android:textStyle="bold"
+
+
+            />
+
+    </LinearLayout>
+
+<!--    <LinearLayout-->
+<!--        android:id="@+id/linearLayout2"-->
+<!--        android:layout_width="120dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        android:background="@drawable/chat_background_00"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:padding="5dp"-->
+
+
+<!--        app:layout_constraintStart_toEndOf="@+id/imageView2"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/linearLayout">-->
+
+<!--        <TextView-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:gravity="center_horizontal"-->
+<!--            android:text="cI: 15414515"-->
+<!--            android:textColor="?attr/colorBlack" />-->
+
+
+<!--    </LinearLayout>-->
+
+<!--    <ImageView-->
+<!--        android:id="@+id/imageView2"-->
+<!--        android:layout_width="40dp"-->
+<!--        android:layout_height="40dp"-->
+<!--        android:layout_marginStart="140dp"-->
+
+<!--        android:src="@drawable/baseline_search_24"-->
+<!--        app:layout_constraintBottom_toBottomOf="@+id/linearLayout2"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toTopOf="@+id/linearLayout2"-->
+<!--        app:tint="?attr/colorPrimary" />-->
+
+</androidx.constraintlayout.widget.ConstraintLayout>

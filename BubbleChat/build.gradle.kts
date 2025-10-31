@@ -31,8 +31,13 @@ android {
 }
 
 dependencies {
+
+    implementation(project(":Shared_res"))
+
     implementation(libs.appcompat)
     implementation(libs.material)
+
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
