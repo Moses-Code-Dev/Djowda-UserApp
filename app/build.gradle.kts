@@ -67,6 +67,14 @@ android {
         }
     }
 
+    // this code block is For fixing the "7 files found with path 'META-INF/io.netty.versions.properties' from inputs:" error.
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/io.netty.versions.properties"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true

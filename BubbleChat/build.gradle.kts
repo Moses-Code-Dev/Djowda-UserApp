@@ -37,6 +37,7 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
 
+    implementation(libs.hivemq.mqtt.client)
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
