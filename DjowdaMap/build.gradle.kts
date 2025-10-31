@@ -62,6 +62,7 @@ android {
 
 dependencies {
     implementation(project(":Shared_res"))
+    implementation(project(":BubbleChat"))
 
     implementation(libs.appcompat)
     implementation(libs.material)
